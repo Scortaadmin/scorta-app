@@ -1,0 +1,69 @@
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+backend/.env
+backend/.env.local
+
+# Keep example files
+!.env.example
+!backend/.env.example
+
+# Credentials and sensitive data
+CREDENTIALS.md
+DEPLOYMENT_SECRETS.md
+*.secret
+*.key
+
+# Uploads
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+.Spotlight-V100
+.Trashes
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# Testing
+coverage/
+.nyc_output/
+
+# Build outputs
+dist/
+build/
+*.tgz
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# MongoDB
+data/db/
+*.mongodb
+
+# Miscellaneous
+.cache/

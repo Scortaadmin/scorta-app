@@ -1,0 +1,24 @@
+{
+  "name": "SCORTA",
+  "short_name": "SCORTA",
+  "description": "La forma segura de conectar - Marketplace Premium",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#07060d",
+  "theme_color": "#1e1b4b",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/508/508757.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/508/508757.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ]
+}

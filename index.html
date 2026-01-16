@@ -1,0 +1,1664 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SCORTA | Conexiones Seguras</title>
+    <link rel="stylesheet" href="styles.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1e1b4b">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Landing / Age Verification -->
+        <div id="screen-gate" class="screen active">
+            <div class="gate-overlay"></div>
+            <div class="gate-content">
+                <div class="brand">
+                    <h1 class="logo">SCORTA</h1>
+                    <p class="tagline">Discreción · Seguridad · Exclusividad</p>
+                </div>
+                <div class="age-card glass-card">
+                    <h2>Verificación de Edad</h2>
+                    <p>Para ingresar a SCORTA, debes confirmar que eres mayor de edad en tu jurisdicción legal (mínimo
+                        18 años).</p>
+                    <div class="gate-actions">
+                        <button class="btn-primary" onclick="navigateTo('screen-login')">Soy mayor de edad</button>
+                        <button class="btn-outline" onclick="window.location.href='https://google.com'">Salir</button>
+                    </div>
+                </div>
+                <p class="legal-notice">Al ingresar, aceptas nuestra <a href="privacy.html" target="_blank"
+                        style="color: var(--accent); text-decoration: underline;">Política de Privacidad</a> y <a
+                        href="terms.html" target="_blank"
+                        style="color: var(--accent); text-decoration: underline;">Términos de Servicio</a>.</p>
+            </div>
+        </div>
+
+        <!-- Login Screen [NEW] -->
+        <div id="screen-login" class="screen">
+            <div class="auth-container">
+                <div class="auth-header">
+                    <h1 class="logo">SCORTA</h1>
+                    <p class="tagline">Bienvenido de vuelta</p>
+                </div>
+
+                <div class="auth-card glass-card">
+                    <h2>Iniciar Sesión</h2>
+                    <form id="login-form" onsubmit="handleLogin(event)">
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="login-email" class="glass-input" placeholder="tu@email.com"
+                                required>
+                        </div>
+                        <div class="form-group">
+                            <label>Contraseña</label>
+                            <input type="password" id="login-password" class="glass-input" placeholder="••••••••"
+                                required>
+                        </div>
+                        <div class="form-row"
+                            style="justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem;">
+                                <input type="checkbox" id="login-remember" style="width: auto; height: auto;">
+                                <span>Recordarme</span>
+                            </label>
+                            <button type="button" class="text-link"
+                                onclick="navigateTo('screen-forgot-password')">¿Olvidaste tu contraseña?</button>
+                        </div>
+                        <button type="submit" class="btn-primary w-full">Ingresar</button>
+                    </form>
+
+                    <div class="auth-divider">
+                        <span>o</span>
+                    </div>
+
+                    <p class="auth-footer">
+                        ¿No tienes cuenta? <button class="text-link" onclick="navigateTo('screen-register')">Regístrate
+                            aquí</button>
+                    </p>
+
+                    <!-- Demo credentials helper -->
+                    <div class="demo-credentials glass-card"
+                        style="margin-top: 20px; padding: 12px; font-size: 0.75rem; background: rgba(234, 179, 8, 0.1); border-color: var(--accent);">
+                        <strong>Demo:</strong><br>
+                        Cliente: cliente@demo.com / demo123<br>
+                        Proveedor: proveedor@demo.com / demo123
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Register Screen [NEW] -->
+        <div id="screen-register" class="screen">
+            <div class="auth-container">
+                <button class="back-btn-auth" onclick="navigateTo('screen-login')">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+
+                <div class="auth-header">
+                    <h1 class="logo">SCORTA</h1>
+                    <p class="tagline">Crear cuenta nueva</p>
+                </div>
+
+                <div class="auth-card glass-card">
+                    <h2>Registro</h2>
+                    <form id="register-form" onsubmit="handleRegister(event)">
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="register-email" class="glass-input" placeholder="tu@email.com"
+                                required>
+                        </div>
+                        <div class="form-group">
+                            <label>Contraseña</label>
+                            <input type="password" id="register-password" class="glass-input"
+                                placeholder="Mínimo 6 caracteres" minlength="6" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Confirmar Contraseña</label>
+                            <input type="password" id="register-password-confirm" class="glass-input"
+                                placeholder="Repite tu contraseña" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Tipo de Cuenta</label>
+                            <select id="register-role" class="glass-input" required>
+                                <option value="">Selecciona una opción</option>
+                                <option value="client">Cliente - Busco servicios</option>
+                                <option value="provider">Prestadora - Ofrezco servicios</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <label
+                                style="display: flex; align-items: flex-start; gap: 8px; font-size: 0.85rem; cursor: pointer;">
+                                <input type="checkbox" id="register-terms" required
+                                    style="width: auto; height: auto; margin-top: 3px;">
+                                <span>Acepto los <a href="terms.html" target="_blank"
+                                        style="color: var(--accent);">Términos de Servicio</a> y <a href="privacy.html"
+                                        target="_blank" style="color: var(--accent);">Política de Privacidad</a> de
+                                    SCORTA</span>
+                            </label>
+                        </div>
+                        <button type="submit" class="btn-primary w-full">Crear Cuenta</button>
+                    </form>
+
+                    <p class="auth-footer">
+                        ¿Ya tienes cuenta? <button class="text-link" onclick="navigateTo('screen-login')">Inicia
+                            sesión</button>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Forgot Password Screen [NEW] -->
+        <div id="screen-forgot-password" class="screen">
+            <div class="auth-container">
+                <button class="back-btn-auth" onclick="navigateTo('screen-login')">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+
+                <div class="auth-header">
+                    <h1 class="logo">SCORTA</h1>
+                    <p class="tagline">Recuperar contraseña</p>
+                </div>
+
+                <div class="auth-card glass-card">
+                    <h2>¿Olvidaste tu contraseña?</h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 0.9rem;">
+                        Ingresa tu email y te enviaremos instrucciones para restablecer tu contraseña.
+                    </p>
+                    <form id="forgot-password-form" onsubmit="handleForgotPassword(event)">
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="forgot-email" class="glass-input" placeholder="tu@email.com"
+                                required>
+                        </div>
+                        <button type="submit" class="btn-primary w-full">Enviar Enlace</button>
+                    </form>
+
+                    <p class="auth-footer">
+                        <button class="text-link" onclick="navigateTo('screen-login')">Volver al inicio de
+                            sesión</button>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Completion Screen [NEW] -->
+        <div id="screen-complete-profile" class="screen">
+            <div class="dashboard-content">
+                <div class="progress-steps">
+                    <div class="step active">
+                        <div class="step-number">1</div>
+                        <span>Información</span>
+                    </div>
+                    <div class="step-line"></div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <span>Ubicación</span>
+                    </div>
+                    <div class="step-line"></div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <span>Listo</span>
+                    </div>
+                </div>
+
+                <div class="glass-card" style="padding: 30px; margin-top: 30px;">
+                    <h2>Completa tu perfil</h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 30px;">
+                        Ayúdanos a personalizar tu experiencia en SCORTA
+                    </p>
+
+                    <form id="complete-profile-form" onsubmit="handleCompleteProfile(event)">
+                        <div class="form-group">
+                            <label>Nombre completo</label>
+                            <input type="text" id="profile-name" class="glass-input" placeholder="Tu nombre" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Teléfono</label>
+                            <input type="tel" id="profile-phone" class="glass-input" placeholder="+593 99 123 4567"
+                                required>
+                        </div>
+                        <div class="form-group">
+                            <label>Ciudad</label>
+                            <select id="profile-city" class="glass-input" required>
+                                <option value="">Selecciona tu ciudad</option>
+                                <option value="Quito">Quito</option>
+                                <option value="Guayaquil">Guayaquil</option>
+                                <option value="Cuenca">Cuenca</option>
+                                <option value="Manta">Manta</option>
+                                <option value="Santo Domingo">Santo Domingo</option>
+                                <option value="Machala">Machala</option>
+                                <option value="Portoviejo">Portoviejo</option>
+                                <option value="Loja">Loja</option>
+                                <option value="Ambato">Ambato</option>
+                                <option value="Esmeraldas">Esmeraldas</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn-primary w-full" style="margin-top: 30px;">
+                            Continuar
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Wallet Screen [NEW] -->
+        <div id="screen-wallet" class="screen">
+            <header class="main-header">
+                <div class="header-top">
+                    <button class="back-btn" onclick="navigateTo('screen-explore')">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <h2 class="header-title">Mi Billetera</h2>
+                    <button class="icon-btn" onclick="navigateTo('screen-transactions')">
+                        <i class="fas fa-history"></i>
+                    </button>
+                </div>
+            </header>
+
+            <div class="dashboard-content">
+                <!-- Balance Card -->
+                <div class="wallet-balance-card glass-card">
+                    <span class="balance-label">Balance Disponible</span>
+                    <h1 class="balance-amount" id="wallet-balance">$0.00</h1>
+                    <div class="wallet-actions">
+                        <button class="btn-primary-sc" onclick="showAddFundsModal()">
+                            <i class="fas fa-plus"></i> Agregar Fondos
+                        </button>
+                        <button class="btn-outline" onclick="navigateTo('screen-payment-methods')">
+                            <i class="fas fa-credit-card"></i> Métodos de Pago
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="inline-stats">
+                    <div class="stat-mini glass-card">
+                        <i class="fas fa-arrow-down" style="color: var(--success);"></i>
+                        <div>
+                            <span class="stat-value">$0.00</span>
+                            <span class="stat-label">Este mes</span>
+                        </div>
+                    </div>
+                    <div class="stat-mini glass-card">
+                        <i class="fas fa-arrow-up" style="color: var(--accent);"></i>
+                        <div>
+                            <span class="stat-value">$0.00</span>
+                            <span class="stat-label">Gastado</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Transactions -->
+                <div class="section-header">
+                    <h3>Transacciones Recientes</h3>
+                    <button class="text-link" onclick="navigateTo('screen-transactions')">Ver todas</button>
+                </div>
+                <div id="recent-transactions-list">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Methods Screen [NEW] -->
+        <div id="screen-payment-methods" class="screen">
+            <header class="main-header">
+                <div class="header-top">
+                    <button class="back-btn" onclick="navigateTo('screen-wallet')">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <h2 class="header-title">Métodos de Pago</h2>
+                    <button class="icon-btn" onclick="showAddPaymentMethodModal()">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+            </header>
+
+            <div class="dashboard-content">
+                <div id="payment-methods-list">
+                    <!-- Populated by JS -->
+                </div>
+
+                <div class="empty-state" id="payment-methods-empty"
+                    style="text-align: center; padding: 60px 20px; display: none;">
+                    <i class="fas fa-credit-card"
+                        style="font-size: 3rem; color: var(--accent); opacity: 0.3; margin-bottom: 20px;"></i>
+                    <p style="color: var(--text-secondary);">No tienes métodos de pago guardados</p>
+                    <button class="btn-primary" style="margin-top: 20px;" onclick="showAddPaymentMethodModal()">
+                        Agregar Método de Pago
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transactions History Screen [NEW] -->
+        <div id="screen-transactions" class="screen">
+            <header class="main-header">
+                <div class="header-top">
+                    <button class="back-btn" onclick="navigateTo('screen-wallet')">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <h2 class="header-title">Historial de Transacciones</h2>
+                    <button class="icon-btn" onclick="filterTransactions()">
+                        <i class="fas fa-filter"></i>
+                    </button>
+                </div>
+            </header>
+
+            <div class="dashboard-content">
+                <div id="transactions-list">
+                    <!-- Populated by JS -->
+                </div>
+
+                <div class="empty-state" id="transactions-empty"
+                    style="text-align: center; padding: 60px 20px; display: none;">
+                    <i class="fas fa-receipt"
+                        style="font-size: 3rem; color: var(--accent); opacity: 0.3; margin-bottom: 20px;"></i>
+                    <p style="color: var(--text-secondary);">No tienes transacciones aún</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enhanced Verification Flow [NEW] -->
+        <div id="screen-enhanced-verification" class="screen">
+            <header class="main-header">
+                <div class="header-top">
+                    <button class="back-btn" onclick="navigateTo('screen-dashboard')">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <h2 class="header-title">Verificación de Identidad</h2>
+                    <span id="verification-step-indicator" style="font-size: 0.8rem; color: var(--accent);">Paso
+                        1/3</span>
+                </div>
+            </header>
+
+            <div class="dashboard-content">
+                <!-- Step 1: Document Upload -->
+                <div id="verification-step-1" class="verification-step active">
+                    <div class="glass-card" style="padding: 30px;">
+                        <div style="text-align: center; margin-bottom: 30px;">
+                            <i class="fas fa-id-card"
+                                style="font-size: 3rem; color: var(--accent); margin-bottom: 15px;"></i>
+                            <h3>Documento de Identidad</h3>
+                            <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                                Sube una foto clara de tu cédula o pasaporte
+                            </p>
+                        </div>
+
+                        <div class="document-upload-area" onclick="document.getElementById('doc-front-input').click()">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Parte frontal del documento</p>
+                            <input type="file" id="doc-front-input" hidden accept="image/*"
+                                onchange="handleDocumentUpload(event, 'front')">
+                            <div id="doc-front-preview" class="upload-preview"></div>
+                        </div>
+
+                        <div class="document-upload-area" onclick="document.getElementById('doc-back-input').click()"
+                            style="margin-top: 15px;">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Parte posterior del documento</p>
+                            <input type="file" id="doc-back-input" hidden accept="image/*"
+                                onchange="handleDocumentUpload(event, 'back')">
+                            <div id="doc-back-preview" class="upload-preview"></div>
+                        </div>
+
+                        <button class="btn-primary w-full" style="margin-top: 30px;" onclick="nextVerificationStep(2)">
+                            Continuar <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 2: Selfie Verification -->
+                <div id="verification-step-2" class="verification-step">
+                    <div class="glass-card" style="padding: 30px;">
+                        <div style="text-align: center; margin-bottom: 30px;">
+                            <i class="fas fa-user-circle"
+                                style="font-size: 3rem; color: var(--accent); margin-bottom: 15px;"></i>
+                            <h3>Verificación Facial</h3>
+                            <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                                Toma una selfie clara de tu rostro
+                            </p>
+                        </div>
+
+                        <div class="selfie-upload-area" onclick="document.getElementById('selfie-input').click()">
+                            <i class="fas fa-camera"></i>
+                            <p>Toca para tomar foto</p>
+                            <input type="file" id="selfie-input" hidden accept="image/*" capture="user"
+                                onchange="handleSelfieUpload(event)">
+                            <div id="selfie-preview" class="upload-preview"></div>
+                        </div>
+
+                        <div class="verification-tips glass-card"
+                            style="margin-top: 20px; padding: 15px; background: rgba(234, 179, 8, 0.1);">
+                            <strong>Consejos:</strong>
+                            <ul
+                                style="margin-top: 10px; padding-left: 20px; color: var(--text-secondary); font-size: 0.85rem;">
+                                <li>Asegúrate de tener buena iluminación</li>
+                                <li>Mira directamente a la cámara</li>
+                                <li>No uses gafas oscuras o gorras</li>
+                            </ul>
+                        </div>
+
+                        <button class="btn-primary w-full" style="margin-top: 30px;" onclick="nextVerificationStep(3)">
+                            Continuar <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Review & Submit -->
+                <div id="verification-step-3" class="verification-step">
+                    <div class="glass-card" style="padding: 30px;">
+                        <div style="text-align: center; margin-bottom: 30px;">
+                            <i class="fas fa-check-circle"
+                                style="font-size: 3rem; color: var(--success); margin-bottom: 15px;"></i>
+                            <h3>Revisión Final</h3>
+                            <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                                Verifica que toda la información sea correcta
+                            </p>
+                        </div>
+
+                        <div id="verification-summary" class="verification-summary">
+                            <!-- Populated by JS -->
+                        </div>
+
+                        <div
+                            style="margin-top: 30px; padding: 20px; background: rgba(16, 185, 129, 0.1); border-radius: 12px; border: 1px solid var(--success);">
+                            <h4 style="color: var(--success); margin-bottom: 10px;">
+                                <i class="fas fa-info-circle"></i> Tiempo de procesamiento
+                            </h4>
+                            <p style="font-size: 0.85rem; color: var(--text-secondary);">
+                                La verificación suele completarse en 24-48 horas. Te notificaremos por email una vez
+                                aprobada.
+                            </p>
+                        </div>
+
+                        <button class="btn-primary w-full" style="margin-top: 30px;" onclick="submitVerification()">
+                            <i class="fas fa-paper-plane"></i> Enviar Verificación
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Explore / Listings -->
+        <div id="screen-explore" class="screen">
+            <header class="main-header">
+                <div class="header-top">
+                    <h1 class="logo-small">SCORTA</h1>
+                    <div class="header-icons">
+                        <div class="search-container glass-card">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="main-search" placeholder="Buscar..."
+                                oninput="handleSearch(this.value)">
+                        </div>
+                        <button class="icon-btn" onclick="navigateTo('screen-safety')"><i
+                                class="fas fa-shield-alt"></i></button>
+                    </div>
+                </div>
+                <div class="filters-bar">
+                    <button class="filter-pill active" onclick="filterBy('all')">Todos</button>
+                    <button class="filter-pill" onclick="filterBy('verified')"><i class="fas fa-certificate"></i>
+                        Verificados</button>
+                    <button class="filter-pill" onclick="navigateTo('screen-map')"><i class="fas fa-map-marked-alt"></i>
+                        Mapa</button>
+                    <button class="filter-pill" onclick="toggleFilterModal()"><i class="fas fa-sliders-h"></i>
+                        Filtros</button>
+                </div>
+            </header>
+
+            <div class="listings-container">
+                <div class="story-row">
+                    <div class="story-item active">
+                        <div class="story-avatar" style="background-image: url('https://i.pravatar.cc/150?img=33')">
+                        </div>
+                        <span>Cerca</span>
+                    </div>
+                    <div class="story-item">
+                        <div class="story-avatar" style="background-image: url('https://i.pravatar.cc/150?img=34')">
+                        </div>
+                        <span>Ana</span>
+                    </div>
+                    <div class="story-item">
+                        <div class="story-avatar" style="background-image: url('https://i.pravatar.cc/150?img=35')">
+                        </div>
+                        <span>Lila</span>
+                    </div>
+                </div>
+
+                <div id="main-listings-grid" class="listings-grid">
+                    <!-- Dynamic Listings -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Map Screen [NEW] -->
+        <div id="screen-map" class="screen map-screen">
+            <header class="main-header">
+                <div class="header-top">
+                    <button class="back-btn" onclick="navigateTo('screen-explore')"><i
+                            class="fas fa-arrow-left"></i></button>
+                    <h2 class="header-title">Mapa de Proximidad</h2>
+                </div>
+            </header>
+            <div id="map-container"
+                style="height: calc(100vh - 80px); width: 100%; min-height: 400px; background: var(--bg-dark);"></div>
+        </div>
+
+        <!-- Filter Modal [NEW] -->
+        <div id="filter-modal" class="modal-overlay" style="display: none;">
+            <div class="modal-content glass-card">
+                <div class="modal-header">
+                    <h3>Filtros Avanzados</h3>
+                    <button class="icon-btn" onclick="toggleFilterModal()"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Precio Máximo: $<span id="price-val">200</span></label>
+                        <input type="range" id="filter-price" min="20" max="300" step="10" value="200"
+                            oninput="document.getElementById('price-val').textContent = this.value">
+                    </div>
+                    <div class="form-group">
+                        <label>Ciudad</label>
+                        <select id="filter-city" class="glass-input">
+                            <option value="all">Todas</option>
+                            <option value="Quito">Quito</option>
+                            <option value="Guayaquil">Guayaquil</option>
+                            <option value="Cuenca">Cuenca</option>
+                            <option value="Manta">Manta</option>
+                            <option value="Santo Domingo">Santo Domingo</option>
+                            <option value="Machala">Machala</option>
+                            <option value="Portoviejo">Portoviejo</option>
+                            <option value="Loja">Loja</option>
+                            <option value="Ambato">Ambato</option>
+                            <option value="Esmeraldas">Esmeraldas</option>
+                            <option value="Quevedo">Quevedo</option>
+                            <option value="Riobamba">Riobamba</option>
+                            <option value="Ibarra">Ibarra</option>
+                            <option value="Latacunga">Latacunga</option>
+                            <option value="Tulcán">Tulcán</option>
+                            <option value="Nueva Loja">Nueva Loja</option>
+                            <option value="Santa Elena">Santa Elena</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Etnia</label>
+                        <select id="filter-ethnicity" class="glass-input">
+                            <option value="all">Todas</option>
+                            <option value="Latina">Latina</option>
+                            <option value="Caucásica">Caucásica</option>
+                            <option value="Europea">Europea</option>
+                            <option value="Afro">Afro</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Nacionalidad</label>
+                        <select id="filter-nationality" class="glass-input">
+                            <option value="all">Todas</option>
+                            <option value="Ecuatoriana">Ecuatoriana</option>
+                            <option value="Colombiana">Colombiana</option>
+                            <option value="Venezolana">Venezolana</option>
+                            <option value="Espanola">Española</option>
+                            <option value="Rusa">Rusa</option>
+                        </select>
+                    </div>
+                    <button class="btn-primary w-full" style="width: 100%; margin-top: 20px;"
+                        onclick="applyAdvancedFilters()">Aplicar Filtros</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Provider Dashboard -->
+        <div id="screen-dashboard" class="screen">
+            <header class="main-header">
+                <div class="header-top">
+                    <button class="back-btn" onclick="navigateTo('screen-explore')"><i
+                            class="fas fa-arrow-left"></i></button>
+                    <h2 class="header-title">Panel de Prestadora</h2>
+                    <button class="icon-btn"><i class="fas fa-cog"></i></button>
+                </div>
+            </header>
+
+            <div class="dashboard-content">
+                <div class="metrics-grid">
+                    <div class="metric-card glass-card">
+                        <span class="metric-label">Vistas (Hoy)</span>
+                        <span class="metric-value">1,240</span>
+                        <span class="metric-trend up">+15% <i class="fas fa-caret-up"></i></span>
+                    </div>
+                    <div class="metric-card glass-card">
+                        <span class="metric-label">Clics WhatsApp</span>
+                        <span class="metric-value">42</span>
+                        <span class="metric-trend up">+8% <i class="fas fa-caret-up"></i></span>
+                    </div>
+                </div>
+
+                <div class="section-header">
+                    <h3>Mis Anuncios</h3>
+                    <button class="text-link">Ver todo</button>
+                </div>
+
+                <div class="ad-management-card glass-card">
+                    <div class="ad-info">
+                        <div class="ad-thumb"
+                            style="background-image: url('https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&w=100&q=80')">
+                        </div>
+                        <div class="ad-details">
+                            <h4>Valeria, 24 (Quito)</h4>
+                            <span class="ad-status-badge active">Publicado</span>
+                        </div>
+                    </div>
+                    <div class="ad-actions">
+                        <div class="toggle-group">
+                            <label>Visibilidad</label>
+                            <input type="checkbox" id="visibility-toggle" checked
+                                onchange="toggleAdVisibility(this.checked)">
+                        </div>
+                        <button class="btn-boost" onclick="navigateTo('screen-plans')"><i class="fas fa-rocket"></i>
+                            Boost Elite</button>
+                    </div>
+                </div>
+
+                <div class="verification-banner glass-card" id="verification-box">
+                    <div class="v-icon-box">
+                        <i class="fas fa-certificate"></i>
+                    </div>
+                    <div class="v-text">
+                        <h4>Solicitar Verificación</h4>
+                        <p>Aumenta tus contactos hasta un 300% con el sello oficial.</p>
+                        <button class="btn-primary-sc btn-small" onclick="startVerification()">Iniciar ahora</button>
+                    </div>
+                </div>
+
+                <div class="section-header">
+                    <h3>Herramientas de Seguridad</h3>
+                </div>
+                <div class="safety-tools-list">
+                    <div class="tool-item glass-card">
+                        <i class="fas fa-phone-slash"></i>
+                        <span>Enmascarar Llamadas</span>
+                        <input type="checkbox" checked>
+                    </div>
+                    <div class="tool-item glass-card">
+                        <i class="fas fa-user-check"></i>
+                        <span>Requerir Validación Cliente</span>
+                        <input type="checkbox">
+                    </div>
+                </div>
+
+                <div class="section-header" style="margin-top: 30px;">
+                    <h3>Configuración</h3>
+                </div>
+                <button class="btn-outline w-full" style="width: 100%;" onclick="navigateTo('screen-settings')">
+                    <i class="fas fa-user-cog"></i> Ajustes de Perfil
+                </button>
+            </div>
+        </div>
+
+        <!-- Settings Screen [NEW] -->
+        <div id="screen-settings" class="screen">
+            <header class="main-header">
+                <div class="header-top">
+                    <button class="back-btn" onclick="navigateTo('screen-dashboard')"><i
+                            class="fas fa-arrow-left"></i></button>
+                    <h2 class="header-title">Configuración de Perfil</h2>
+                </div>
+            </header>
+            <div class="dashboard-content">
+                <div class="glass-card" style="padding: 20px;">
+                    <div class="form-group">
+                        <label>Nombre Público</label>
+                        <input type="text" id="settings-name" class="glass-input" placeholder="Tu nombre">
+                    </div>
+                    <div class="form-group">
+                        <label>Edad</label>
+                        <input type="number" id="settings-age" class="glass-input" placeholder="Tu edad">
+                    </div>
+                    <div class="form-group">
+                        <label>Ciudad Base</label>
+                        <select id="settings-city" class="glass-input">
+                            <option value="Quito">Quito</option>
+                            <option value="Guayaquil">Guayaquil</option>
+                            <option value="Cuenca">Cuenca</option>
+                            <option value="Manta">Manta</option>
+                            <option value="Santo Domingo">Santo Domingo</option>
+                            <option value="Machala">Machala</option>
+                            <option value="Portoviejo">Portoviejo</option>
+                            <option value="Loja">Loja</option>
+                            <option value="Ambato">Ambato</option>
+                            <option value="Esmeraldas">Esmeraldas</option>
+                            <option value="Quevedo">Quevedo</option>
+                            <option value="Riobamba">Riobamba</option>
+                            <option value="Ibarra">Ibarra</option>
+                            <option value="Latacunga">Latacunga</option>
+                            <option value="Tulcán">Tulcán</option>
+                            <option value="Nueva Loja">Nueva Loja</option>
+                            <option value="Santa Elena">Santa Elena</option>
+                        </select>
+                    </div>
+                    <button class="btn-primary-sc w-full" style="width: 100%; margin-top: 20px;"
+                        onclick="saveUserSettings()">
+                        Guardar Cambios
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Favorites Screen [NEW] -->
+        <div id="screen-favorites" class="screen">
+            <header class="main-header">
+                <div class="header-top">
+                    <button class="back-btn" onclick="navigateTo('screen-explore')"><i
+                            class="fas fa-arrow-left"></i></button>
+                    <h2 class="header-title">Mis Favoritos</h2>
+                </div>
+            </header>
+            <div id="favorites-list" class="listings-grid" style="padding: 20px 15px;">
+                <!-- Dynamic Content -->
+                <div class="empty-state"
+                    style="text-align: center; padding-top: 80px; width: 100%; grid-column: span 2;">
+                    <i class="fas fa-heart"
+                        style="font-size: 3rem; color: var(--accent); opacity: 0.3; margin-bottom: 20px;"></i>
+                    <p style="color: var(--text-secondary);">Aún no tienes favoritos. <br>Guarda perfiles para verlos
+                        aquí.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Messages Screen [NEW] -->
+        <div id="screen-messages" class="screen">
+            <header class="main-header">
+                <div class="header-top">
+                    <button class="back-btn" onclick="navigateTo('screen-explore')"><i
+                            class="fas fa-arrow-left"></i></button>
+                    <h2 class="header-title">Mensajes</h2>
+                </div>
+            </header>
+            <div id="messages-list" class="detail-content">
+                <!-- Static Support Chat -->
+                <div class="glass-card chat-entry"
+                    style="padding: 15px; display: flex; align-items: center; gap: 15px; margin-bottom: 10px; cursor: pointer;"
+                    onclick="openChat('Soporte SCORTA')">
+                    <div
+                        style="width: 50px; height: 50px; border-radius: 100%; background: var(--surface-light); display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-user-shield" style="color: var(--accent);"></i>
+                    </div>
+                    <div>
+                        <h4 style="margin: 0;">Soporte SCORTA</h4>
+                        <p style="margin: 0; font-size: 0.8rem; color: var(--text-secondary);">¡Bienvenida a la
+                            plataforma segura!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Individual Chat Screen [NEW] -->
+        <div id="screen-chat" class="screen chat-screen">
+            <header class="main-header">
+                <div class="header-top">
+                    <button class="back-btn" onclick="navigateTo('screen-messages')"><i
+                            class="fas fa-arrow-left"></i></button>
+                    <h2 id="chat-with-name" class="header-title">Chat</h2>
+                </div>
+            </header>
+            <div id="chat-box" class="chat-messages-container">
+                <!-- Messages will appear here -->
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="chat-input-field" placeholder="Escribe un mensaje...">
+                <button class="btn-send" onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+
+        <!-- Profile Detail -->
+        <div id="screen-profile" class="screen">
+            <div class="profile-hero">
+                <button class="floating-back" onclick="navigateTo('screen-explore')"><i
+                        class="fas fa-chevron-left"></i></button>
+                <div id="detail-img" class="hero-image"></div>
+                <div class="hero-overlay">
+                    <h2 id="detail-name">Valeria, 24</h2>
+                    <div class="detail-badges">
+                        <span class="badge verified"><i class="fas fa-certificate"></i> Identidad Verificada</span>
+                        <button id="fav-btn" class="fav-icon-btn" onclick="toggleFavorite()"><i
+                                class="far fa-heart"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-content">
+                <div class="detail-stats">
+                    <div class="stat-box">
+                        <span class="stat-num">4.9</span>
+                        <span class="stat-label">Rating</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-num">12</span>
+                        <span class="stat-label">Fotos</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-num">100%</span>
+                        <span class="stat-label">Real</span>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h3>Sobre mí</h3>
+                    <p class="description">Hola, soy una persona independiente, discreta y profesional. Me encanta
+                        compartir momentos especiales y asegurar que ambos disfrutemos al máximo. Fotos 100% reales,
+                        verificadas por la plataforma.</p>
+                </div>
+
+                <div class="detail-section">
+                    <h3>Servicios</h3>
+                    <div class="tags">
+                        <span class="tag">Cena</span>
+                        <span class="tag">Viajes</span>
+                        <span class="tag">Masaje Terapéutico</span>
+                        <span class="tag">Discreción Total</span>
+                    </div>
+                </div>
+
+                <div class="reviews-preview">
+                    <div class="section-header">
+                        <h3 id="review-count-label">Reseñas de Usuarios (15)</h3>
+                        <button class="text-link" onclick="toggleReviewForm()">Escribir reseña</button>
+                    </div>
+
+                    <!-- Review Form [ENHANCED] -->
+                    <div id="review-form" class="review-form-container glass-card"
+                        style="display: none; margin-bottom: 20px; padding: 15px;">
+                        <div class="rating-input" style="margin-bottom: 10px; color: var(--accent);">
+                            <i class="far fa-star" onclick="setRating(1)"></i>
+                            <i class="far fa-star" onclick="setRating(2)"></i>
+                            <i class="far fa-star" onclick="setRating(3)"></i>
+                            <i class="far fa-star" onclick="setRating(4)"></i>
+                            <i class="far fa-star" onclick="setRating(5)"></i>
+                        </div>
+                        <textarea id="review-text" placeholder="Comparte tu experiencia..."
+                            style="width: 100%; height: 80px; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); color: white; border-radius: 8px; padding: 10px; margin-bottom: 10px;"></textarea>
+
+                        <!-- Photo Upload Section -->
+                        <div class="review-photos-section">
+                            <label for="review-photos-input" class="photo-upload-btn">
+                                <i class="fas fa-camera"></i> Agregar Fotos (Opcional)
+                            </label>
+                            <input type="file" id="review-photos-input" hidden accept="image/*" multiple
+                                onchange="handleReviewPhotosUpload(event)">
+                            <div id="review-photos-preview" class="review-photos-preview"></div>
+                        </div>
+
+                        <button class="btn-primary-sc btn-small" style="width: 100%; margin-top: 10px;"
+                            onclick="submitReview()">Publicar
+                            Reseña</button>
+                    </div>
+
+                    <!-- Review Sorting -->
+                    <div class="review-sorting" style="margin-bottom: 15px;">
+                        <select id="review-sort" class="glass-input" style="padding: 8px; font-size: 0.85rem;"
+                            onchange="sortReviews(this.value)">
+                            <option value="newest">Más recientes</option>
+                            <option value="highest">Mejor valoradas</option>
+                            <option value="lowest">Menor valoradas</option>
+                            <option value="helpful">Más útiles</option>
+                        </select>
+                    </div>
+
+                    <div id="reviews-list">
+                        <div class="review-mini glass-card">
+                            <div class="review-header">
+                                <span class="rating-stars">★★★★★</span>
+                                <span class="review-date">Hoy</span>
+                            </div>
+                            <p>"Excelente atención, muy puntual y súper agradable. Recomendada 100%."</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-footer">
+                <button class="btn-whatsapp" onclick="showToast('Abriendo WhatsApp...')"><i class="fab fa-whatsapp"></i>
+                    WhatsApp</button>
+                <button class="btn-primary-sc" onclick="showToast('Llamada enmascarada iniciada...')"><i
+                        class="fas fa-phone"></i> Llamar</button>
+            </div>
+        </div>
+
+        <!-- Safety Center -->
+        <div id="screen-safety" class="screen">
+            <header class="main-header">
+                <div class="header-top">
+                    <button class="back-btn" onclick="navigateTo('screen-explore')"><i
+                            class="fas fa-arrow-left"></i></button>
+                    <h2 class="header-title">Centro de Seguridad</h2>
+                </div>
+            </header>
+            <div class="detail-content">
+                <div class="safety-card glass-card">
+                    <i class="fas fa-user-shield"></i>
+                    <h3>Verificación SCORTA</h3>
+                    <p>Todos los perfiles con insignia azul han pasado una prueba de video en vivo. Nunca aceptes fotos
+                        que no coincidan.</p>
+                </div>
+                <div class="safety-card glass-card">
+                    <i class="fas fa-eye-slash"></i>
+                    <h3>Configuración de Privacidad</h3>
+                    <p>Usa nuestro sistema de enmascaramiento de llamadas para proteger tu número personal.</p>
+                </div>
+                <div class="safety-card glass-card">
+                    <i class="fas fa-lock"></i>
+                    <h3>Pagos Seguros</h3>
+                    <p>Nuestra pasarela utiliza encriptación bancaria. SCORTA nunca almacena tus datos de tarjeta.</p>
+                </div>
+                <div class="safety-card glass-card warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h3>Botón de Auxilio</h3>
+                    <p>Para prestadoras: En caso de emergencia, presiona este botón para alertar a nuestro equipo de
+                        seguridad inmediata.</p>
+                    <button class="btn-panic" style="width: 100%; margin-top: 15px;"
+                        onclick="alert('🚨 ALERTA ENVIADA: Seguridad SCORTA en camino.')">BOTÓN DE ALERTA</button>
+                </div>
+
+                <div class="section-header" style="margin-top: 30px;">
+                    <h3>Consejos de Seguridad</h3>
+                </div>
+                <div class="glass-card" style="padding: 15px; font-size: 0.9rem; color: var(--text-secondary);">
+                    <ul style="padding-left: 20px;">
+                        <li style="margin-bottom: 10px;">Encuéntrate siempre en lugares públicos para la primera cita.
+                        </li>
+                        <li style="margin-bottom: 10px;">Informa a alguien de confianza sobre tu ubicación.</li>
+                        <li>Confía en tu intuición: si algo no se siente bien, retírate.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Plan Selector Screen [NEW] -->
+        <div id="screen-plans" class="screen">
+            <header class="main-header">
+                <div class="header-top">
+                    <button class="back-btn" onclick="navigateTo('screen-dashboard')"><i
+                            class="fas fa-arrow-left"></i></button>
+                    <h2 class="header-title">Elegir Plan Boost</h2>
+                </div>
+            </header>
+            <div class="dashboard-content">
+                <div class="plan-card glass-card bronze" onclick="openCheckout('Bronze', 5, '4 horas')">
+                    <div class="plan-header">
+                        <i class="fas fa-medal"></i>
+                        <h3>Bronze</h3>
+                        <span class="plan-price">$5</span>
+                    </div>
+                    <p>4 horas de visibilidad superior en el marketplace.</p>
+                    <button class="btn-select">Seleccionar</button>
+                </div>
+
+                <div class="plan-card glass-card silver" onclick="openCheckout('Silver', 12, '12 horas')">
+                    <div class="plan-header">
+                        <i class="fas fa-medal"></i>
+                        <h3>Silver</h3>
+                        <span class="plan-price">$12</span>
+                    </div>
+                    <p>12 horas de visibilidad destacada con mayor alcance.</p>
+                    <button class="btn-select">Seleccionar</button>
+                </div>
+
+                <div class="plan-card glass-card gold" onclick="openCheckout('Gold', 20, '24 horas')">
+                    <div class="plan-header">
+                        <i class="fas fa-medal"></i>
+                        <h3>Gold</h3>
+                        <span class="plan-price">$20</span>
+                    </div>
+                    <p>24 horas con prioridad máxima y marco dorado exclusivo.</p>
+                    <button class="btn-select">Seleccionar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Checkout Screen [NEW] -->
+        <div id="screen-checkout" class="screen">
+            <header class="main-header">
+                <div class="header-top">
+                    <button class="back-btn" onclick="navigateTo('screen-plans')"><i
+                            class="fas fa-arrow-left"></i></button>
+                    <h2 class="header-title">Finalizar Pago</h2>
+                </div>
+            </header>
+            <div class="dashboard-content">
+                <div class="payment-summary glass-card">
+                    <div class="summary-row">
+                        <span>Plan seleccionado:</span>
+                        <strong id="checkout-plan-name">Gold</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span>Duración:</span>
+                        <strong id="checkout-plan-duration">24 horas</strong>
+                    </div>
+                    <div class="summary-row total">
+                        <span>Total a pagar:</span>
+                        <strong id="checkout-total">$20.00</strong>
+                    </div>
+                </div>
+
+                <div class="card-form glass-card">
+                    <div class="form-group">
+                        <label>Número de Tarjeta</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-credit-card"></i>
+                            <input type="text" placeholder="**** **** **** ****" maxlength="19">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Vencimiento</label>
+                            <input type="text" placeholder="MM/YY" maxlength="5">
+                        </div>
+                        <div class="form-group">
+                            <label>CVV</label>
+                            <input type="password" placeholder="***" maxlength="3">
+                        </div>
+                    </div>
+                    <button class="btn-primary-sc w-full" style="width: 100%; margin-top: 20px;"
+                        onclick="processPayment()">
+                        <i class="fas fa-lock"></i> Pagar de forma segura
+                    </button>
+                </div>
+                <p class="secure-notice"><i class="fas fa-user-shield"></i> Pago encriptado SSL de 256 bits</p>
+            </div>
+        </div>
+
+        <!-- Multi-step Ad Creation Screen [NEW] -->
+        <div id="screen-create-ad" class="screen">
+            <header class="main-header">
+                <div class="header-top">
+                    <button class="back-btn" onclick="navigateTo('screen-explore')"><i
+                            class="fas fa-times"></i></button>
+                    <h2 class="header-title">Nuevo Anuncio</h2>
+                    <span id="step-indicator" style="font-size: 0.8rem; color: var(--accent);">Paso 1/3</span>
+                </div>
+            </header>
+            <div class="dashboard-content">
+                <div id="ad-step-1" class="ad-step active">
+                    <h3>Datos Básicos</h3>
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label>Nombre Publicitario</label>
+                        <input type="text" id="ad-name" placeholder="Ej: Valeria" class="glass-input">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Edad</label>
+                            <input type="number" id="ad-age" placeholder="24" class="glass-input">
+                        </div>
+                        <div class="form-group">
+                            <label>Ciudad</label>
+                            <select id="ad-city" class="glass-input">
+                                <option value="Quito">Quito</option>
+                                <option value="Guayaquil">Guayaquil</option>
+                                <option value="Cuenca">Cuenca</option>
+                                <option value="Manta">Manta</option>
+                                <option value="Santo Domingo">Santo Domingo</option>
+                                <option value="Machala">Machala</option>
+                                <option value="Portoviejo">Portoviejo</option>
+                                <option value="Loja">Loja</option>
+                                <option value="Ambato">Ambato</option>
+                                <option value="Esmeraldas">Esmeraldas</option>
+                                <option value="Quevedo">Quevedo</option>
+                                <option value="Riobamba">Riobamba</option>
+                                <option value="Ibarra">Ibarra</option>
+                                <option value="Latacunga">Latacunga</option>
+                                <option value="Tulcán">Tulcán</option>
+                                <option value="Nueva Loja">Nueva Loja</option>
+                                <option value="Santa Elena">Santa Elena</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn-primary-sc w-full" style="width: 100%; margin-top: 40px;"
+                        onclick="adNextStep(2)">Siguiente <i class="fas fa-arrow-right"></i></button>
+                </div>
+
+                <div id="ad-step-2" class="ad-step">
+                    <h3>Servicios y Tarifas</h3>
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label>Tarifa por hora ($)</label>
+                        <input type="number" id="ad-price" placeholder="50" class="glass-input">
+                    </div>
+                    <div class="form-group">
+                        <label>Servicios (Elegir varios)</label>
+                        <div class="tags-selector">
+                            <span class="tag-opt" onclick="this.classList.toggle('active')">Cena</span>
+                            <span class="tag-opt" onclick="this.classList.toggle('active')">Viajes</span>
+                            <span class="tag-opt" onclick="this.classList.toggle('active')">Masajes</span>
+                            <span class="tag-opt" onclick="this.classList.toggle('active')">Discreción</span>
+                        </div>
+                    </div>
+                    <button class="btn-primary-sc w-full" style="width: 100%; margin-top: 40px;"
+                        onclick="adNextStep(3)">Siguiente <i class="fas fa-arrow-right"></i></button>
+                </div>
+
+                <div id="ad-step-3" class="ad-step">
+                    <h3>Fotos y Publicación</h3>
+                    <div class="photo-upload-grid">
+                        <label class="photo-slot add-photo" for="ad-photo-input">
+                            <i class="fas fa-camera"></i>
+                            <input type="file" id="ad-photo-input" hidden accept="image/*"
+                                onchange="handlePhotoPreview(event)">
+                        </label>
+                        <div id="photo-preview-1" class="photo-slot preview-slot"></div>
+                        <div id="photo-preview-2" class="photo-slot preview-slot"></div>
+                    </div>
+                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 15px; text-align: center;">
+                        Sugerencia: Usa fotos con buena iluminación para mejores resultados.</p>
+                    <button class="btn-primary w-full" style="width: 100%; margin-top: 40px;"
+                        onclick="finalizeAd()">Publicar Ahora <i class="fas fa-check"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Global Bottom Nav -->
+        <nav class="bottom-nav">
+            <button id="nav-explore" class="nav-item active" onclick="navigateTo('screen-explore')">
+                <i class="fas fa-home"></i><span>Explora</span>
+            </button>
+            <button id="nav-favorites" class="nav-item" onclick="navigateTo('screen-favorites')"><i
+                    class="fas fa-heart"></i><span>Favoritos</span></button>
+            <button class="nav-item publish-btn" onclick="navigateTo('screen-create-ad')"><i
+                    class="fas fa-plus"></i></button>
+            <button id="nav-messages" class="nav-item" onclick="navigateTo('screen-messages')"><i
+                    class="fas fa-comment-dots"></i><span>Mensajes</span></button>
+            <button id="nav-dashboard" class="nav-item" onclick="navigateTo('screen-dashboard')">
+                <i class="fas fa-user-circle"></i><span>Panel</span>
+            </button>
+        </nav>
+
+        <!-- Add Funds Modal [NEW] -->
+        <div id="add-funds-modal" class="modal-overlay" style="display: none;">
+            <div class="modal-content glass-card">
+                <div class="modal-header">
+                    <h3>Agregar Fondos</h3>
+                    <button class="icon-btn" onclick="closeAddFundsModal()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Monto a agregar</label>
+                        <div class="amount-input-group">
+                            <span class="currency-symbol">$</span>
+                            <input type="number" id="add-funds-amount" class="glass-input" placeholder="100.00" min="10"
+                                step="0.01" required>
+                        </div>
+                    </div>
+
+                    <div class="quick-amounts">
+                        <button class="quick-amount-btn" onclick="setFundsAmount(25)">$25</button>
+                        <button class="quick-amount-btn" onclick="setFundsAmount(50)">$50</button>
+                        <button class="quick-amount-btn" onclick="setFundsAmount(100)">$100</button>
+                        <button class="quick-amount-btn" onclick="setFundsAmount(200)">$200</button>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Método de pago</label>
+                        <select id="add-funds-payment-method" class="glass-input" required>
+                            <option value="">Seleccionar método</option>
+                            <!-- Populated by JS -->
+                        </select>
+                        <button class="text-link" style="margin-top: 8px;" onclick="showAddPaymentMethodModal()">
+                            <i class="fas fa-plus"></i> Agregar nuevo método
+                        </button>
+                    </div>
+
+                    <button class="btn-primary w-full" style="width: 100%; margin-top: 20px;"
+                        onclick="processAddFunds()">
+                        <i class="fas fa-lock"></i> Agregar Fondos de Forma Segura
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Payment Method Modal [NEW] -->
+        <div id="add-payment-method-modal" class="modal-overlay" style="display: none;">
+            <div class="modal-content glass-card">
+                <div class="modal-header">
+                    <h3>Agregar Método de Pago</h3>
+                    <button class="icon-btn" onclick="closeAddPaymentMethodModal()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="add-payment-method-form" onsubmit="handleAddPaymentMethod(event)">
+                        <div class="form-group">
+                            <label>Número de Tarjeta</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-credit-card"></i>
+                                <input type="text" id="card-number" class="glass-input"
+                                    placeholder="**** **** **** ****" maxlength="19" required
+                                    oninput="formatCardNumberInput(this)">
+                            </div>
+                            <div id="card-type-indicator"
+                                style="margin-top: 5px; font-size: 0.75rem; color: var(--text-secondary);"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Nombre del Titular</label>
+                            <input type="text" id="card-holder-name" class="glass-input"
+                                placeholder="Como aparece en la tarjeta" required>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Vencimiento</label>
+                                <input type="text" id="card-expiry" class="glass-input" placeholder="MM/AA"
+                                    maxlength="5" required oninput="formatExpiryInput(this)">
+                            </div>
+                            <div class="form-group">
+                                <label>CVV</label>
+                                <input type="password" id="card-cvv" class="glass-input" placeholder="***" maxlength="4"
+                                    required>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-primary w-full" style="width: 100%; margin-top: 20px;">
+                            <i class="fas fa-plus"></i> Guardar Tarjeta
+                        </button>
+                    </form>
+
+                    <p class="secure-notice" style="margin-top: 15px; text-align: center;">
+                        <i class="fas fa-lock"></i> Conexión segura SSL 256-bit
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================
+             ADMIN PANEL SCREENS
+             ============================================ -->
+
+        <!-- Admin Login Screen -->
+        <div id="screen-admin-login" class="screen">
+            <div class="auth-container">
+                <div class="auth-header">
+                    <h1 class="logo">SCORTA</h1>
+                    <p class="tagline">Panel de Administración</p>
+                </div>
+
+                <div class="auth-card glass-card">
+                    <h2>Acceso Admin</h2>
+                    <form id="admin-login-form" onsubmit="handleAdminLogin(event)">
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="admin-login-email" class="glass-input"
+                                placeholder="admin@scorta.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Contraseña</label>
+                            <input type="password" id="admin-login-password" class="glass-input" placeholder="••••••••"
+                                required>
+                        </div>
+                        <button type="submit" class="btn-primary w-full">Ingresar</button>
+                    </form>
+
+                    <!-- Demo credentials -->
+                    <div class="demo-credentials glass-card"
+                        style="margin-top: 20px; padding: 12px; font-size: 0.75rem; background: rgba(234, 179, 8, 0.1); border-color: var(--accent);">
+                        <strong>Demo:</strong><br>
+                        Admin: admin@scorta.com / admin123
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Dashboard Screen -->
+        <div id="screen-admin-dashboard" class="screen">
+            <div class="admin-layout">
+                <!-- Admin Sidebar -->
+                <aside class="admin-sidebar glass-card">
+                    <div class="admin-sidebar-header">
+                        <h2 class="logo">SCORTA</h2>
+                        <p>Administrador</p>
+                    </div>
+                    <nav class="admin-nav">
+                        <button class="admin-nav-item active" onclick="showAdminDashboard()">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Dashboard</span>
+                        </button>
+                        <button class="admin-nav-item" onclick="showAdminVerifications()">
+                            <i class="fas fa-id-card"></i>
+                            <span>Verificaciones</span>
+                            <span class="nav-badge" id="pending-verifications-badge">0</span>
+                        </button>
+                        <button class="admin-nav-item" onclick="showAdminUsers()">
+                            <i class="fas fa-users"></i>
+                            <span>Usuarios</span>
+                        </button>
+                        <button class="admin-nav-item" onclick="showAdminReports()">
+                            <i class="fas fa-flag"></i>
+                            <span>Reportes</span>
+                            <span class="nav-badge" id="pending-reports-badge">0</span>
+                        </button>
+                        <button class="admin-nav-item" onclick="showAdminTransactions()">
+                            <i class="fas fa-dollar-sign"></i>
+                            <span>Transacciones</span>
+                        </button>
+                        <button class="admin-nav-item" onclick="showAdminSettings()">
+                            <i class="fas fa-cog"></i>
+                            <span>Configuración</span>
+                        </button>
+                    </nav>
+                    <button class="admin-logout-btn" onclick="handleAdminLogout()">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Cerrar Sesión</span>
+                    </button>
+                </aside>
+
+                <!-- Admin Main Content -->
+                <main class="admin-main">
+                    <!-- Dashboard View -->
+                    <div id="admin-view-dashboard" class="admin-view active">
+                        <div class="admin-header">
+                            <h1>Dashboard Principal</h1>
+                            <p class="admin-subtitle">Visión general de la plataforma</p>
+                        </div>
+
+                        <!-- Metrics Grid -->
+                        <div class="admin-metrics-grid">
+                            <div class="admin-metric-card glass-card">
+                                <div class="metric-icon"
+                                    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <div class="metric-data">
+                                    <span class="metric-label">Usuarios Totales</span>
+                                    <span class="metric-value" id="metric-total-users">0</span>
+                                    <span class="metric-trend up" id="metric-users-trend">+0%</span>
+                                </div>
+                            </div>
+                            <div class="admin-metric-card glass-card">
+                                <div class="metric-icon"
+                                    style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                                    <i class="fas fa-user-tie"></i>
+                                </div>
+                                <div class="metric-data">
+                                    <span class="metric-label">Proveedoras</span>
+                                    <span class="metric-value" id="metric-providers">0</span>
+                                    <span class="metric-trend" id="metric-providers-trend"></span>
+                                </div>
+                            </div>
+                            <div class="admin-metric-card glass-card">
+                                <div class="metric-icon"
+                                    style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                                    <i class="fas fa-dollar-sign"></i>
+                                </div>
+                                <div class="metric-data">
+                                    <span class="metric-label">Ingresos del Mes</span>
+                                    <span class="metric-value" id="metric-revenue">$0</span>
+                                    <span class="metric-trend up" id="metric-revenue-trend">+0%</span>
+                                </div>
+                            </div>
+                            <div class="admin-metric-card glass-card">
+                                <div class="metric-icon"
+                                    style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                                    <i class="fas fa-receipt"></i>
+                                </div>
+                                <div class="metric-data">
+                                    <span class="metric-label">Transacciones</span>
+                                    <span class="metric-value" id="metric-transactions">0</span>
+                                    <span class="metric-trend" id="metric-transactions-trend"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Alerts -->
+                        <div class="admin-section">
+                            <h3>Alertas Pendientes</h3>
+                            <div id="admin-alerts-list">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+
+                        <!-- Charts Section -->
+                        <div class="admin-charts-grid">
+                            <div class="glass-card" style="padding: 20px;">
+                                <h4>Nuevos Usuarios (Últimos 30 días)</h4>
+                                <canvas id="users-growth-chart" width="400" height="200"></canvas>
+                            </div>
+                            <div class="glass-card" style="padding: 20px;">
+                                <h4>Ingresos Diarios (Últimos 30 días)</h4>
+                                <canvas id="revenue-chart" width="400" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Verifications View -->
+                    <div id="admin-view-verifications" class="admin-view">
+                        <div class="admin-header">
+                            <h1>Verificaciones de Identidad</h1>
+                            <p class="admin-subtitle">Gestiona solicitudes de verificación</p>
+                        </div>
+
+                        <!-- Filter Tabs -->
+                        <div class="admin-tabs">
+                            <button class="admin-tab active"
+                                onclick="filterVerifications('pending')">Pendientes</button>
+                            <button class="admin-tab" onclick="filterVerifications('approved')">Aprobadas</button>
+                            <button class="admin-tab" onclick="filterVerifications('rejected')">Rechazadas</button>
+                            <button class="admin-tab" onclick="filterVerifications('all')">Todas</button>
+                        </div>
+
+                        <div id="verifications-list" class="admin-table-container">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Users View -->
+                    <div id="admin-view-users" class="admin-view">
+                        <div class="admin-header">
+                            <h1>Gestión de Usuarios</h1>
+                            <p class="admin-subtitle">Administra todos los usuarios de la plataforma</p>
+                        </div>
+
+                        <!-- Filters and Search -->
+                        <div class="admin-filters glass-card">
+                            <div class="search-container">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="users-search"
+                                    placeholder="Buscar por nombre, email o teléfono...">
+                            </div>
+                            <select id="users-role-filter" class="filter-select" onchange="filterUsers()">
+                                <option value="all">Todos los roles</option>
+                                <option value="client">Clientes</option>
+                                <option value="provider">Proveedoras</option>
+                            </select>
+                            <select id="users-verified-filter" class="filter-select" onchange="filterUsers()">
+                                <option value="all">Todos</option>
+                                <option value="true">Verificados</option>
+                                <option value="false">No verificados</option>
+                            </select>
+                            <select id="users-status-filter" class="filter-select" onchange="filterUsers()">
+                                <option value="all">Todos los estados</option>
+                                <option value="active">Activos</option>
+                                <option value="suspended">Suspendidos</option>
+                            </select>
+                        </div>
+
+                        <div id="users-list" class="admin-table-container">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- User Detail View -->
+                    <div id="admin-view-user-detail" class="admin-view">
+                        <div class="admin-header">
+                            <button class="back-btn" onclick="showAdminUsers()">
+                                <i class="fas fa-arrow-left"></i> Volver
+                            </button>
+                            <h1>Detalle de Usuario</h1>
+                        </div>
+                        <div id="user-detail-content">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Reports View -->
+                    <div id="admin-view-reports" class="admin-view">
+                        <div class="admin-header">
+                            <h1>Sistema de Reportes</h1>
+                            <p class="admin-subtitle">Gestiona reportes y disputas</p>
+                        </div>
+
+                        <!-- Filter Tabs -->
+                        <div class="admin-tabs">
+                            <button class="admin-tab active" onclick="filterReports('pending')">Pendientes</button>
+                            <button class="admin-tab" onclick="filterReports('assigned')">Asignados</button>
+                            <button class="admin-tab" onclick="filterReports('resolved')">Resueltos</button>
+                            <button class="admin-tab" onclick="filterReports('all')">Todos</button>
+                        </div>
+
+                        <div id="reports-list" class="admin-table-container">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Transactions View -->
+                    <div id="admin-view-transactions" class="admin-view">
+                        <div class="admin-header">
+                            <h1>Gestión de Transacciones</h1>
+                            <p class="admin-subtitle">Monitorea transacciones y pagos</p>
+                        </div>
+
+                        <!-- Summary Cards -->
+                        <div class="admin-metrics-grid"
+                            style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 30px;">
+                            <div class="glass-card" style="padding: 20px;">
+                                <span class="metric-label">Ingresos Totales</span>
+                                <span class="metric-value" id="total-revenue">$0</span>
+                            </div>
+                            <div class="glass-card" style="padding: 20px;">
+                                <span class="metric-label">Ingresos del Mes</span>
+                                <span class="metric-value" id="monthly-revenue">$0</span>
+                            </div>
+                            <div class="glass-card" style="padding: 20px;">
+                                <span class="metric-label">Transacciones Hoy</span>
+                                <span class="metric-value" id="today-transactions">0</span>
+                            </div>
+                        </div>
+
+                        <!-- Filters -->
+                        <div class="admin-filters glass-card">
+                            <select id="transactions-type-filter" class="filter-select" onchange="filterTransactions()">
+                                <option value="all">Todos los tipos</option>
+                                <option value="payment">Pagos</option>
+                                <option value="deposit">Depósitos</option>
+                                <option value="withdrawal">Retiros</option>
+                                <option value="refund">Reembolsos</option>
+                            </select>
+                            <input type="date" id="transactions-date-from" class="filter-select"
+                                onchange="filterTransactions()">
+                            <input type="date" id="transactions-date-to" class="filter-select"
+                                onchange="filterTransactions()">
+                        </div>
+
+                        <div id="transactions-list" class="admin-table-container">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Settings View -->
+                    <div id="admin-view-settings" class="admin-view">
+                        <div class="admin-header">
+                            <h1>Configuración de Plataforma</h1>
+                            <p class="admin-subtitle">Configura parámetros operativos</p>
+                        </div>
+
+                        <div class="glass-card" style="padding: 30px; max-width: 800px;">
+                            <form id="platform-settings-form" onsubmit="savePlatformSettings(event)">
+                                <div class="form-group">
+                                    <label>Comisión de Plataforma (%)</label>
+                                    <input type="number" id="setting-commission" class="glass-input" min="0" max="100"
+                                        step="0.5" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Precio Mínimo de Servicio ($)</label>
+                                    <input type="number" id="setting-min-price" class="glass-input" min="1" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Precio Máximo de Servicio ($)</label>
+                                    <input type="number" id="setting-max-price" class="glass-input" min="1" required>
+                                </div>
+                                <div class="form-group">
+                                    <label style="display: flex; align-items: center; gap: 10px;">
+                                        <input type="checkbox" id="setting-require-verification"
+                                            style="width: auto; height: auto;">
+                                        <span>Requerir verificación de identidad</span>
+                                    </label>
+                                </div>
+                                <div class="form-group">
+                                    <label style="display: flex; align-items: center; gap: 10px;">
+                                        <input type="checkbox" id="setting-auto-approve"
+                                            style="width: auto; height: auto;">
+                                        <span>Aprobar perfiles automáticamente</span>
+                                    </label>
+                                </div>
+                                <button type="submit" class="btn-primary" style="margin-top: 20px;">
+                                    <i class="fas fa-save"></i> Guardar Configuración
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+
+        <!-- Verification Review Modal (Admin) -->
+        <div id="verification-review-modal" class="modal-overlay" style="display: none;">
+            <div class="modal-content glass-card" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
+                <div class="modal-header">
+                    <h3>Revisar Verificación</h3>
+                    <button class="icon-btn" onclick="closeVerificationReviewModal()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body" id="verification-review-content">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Report Review Modal (Admin) -->
+        <div id="report-review-modal" class="modal-overlay" style="display: none;">
+            <div class="modal-content glass-card" style="max-width: 600px;">
+                <div class="modal-header">
+                    <h3>Revisar Reporte</h3>
+                    <button class="icon-btn" onclick="closeReportReviewModal()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body" id="report-review-content">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notification -->
+        <div id="toast" class="toast">
+            <span id="toast-message"></span>
+        </div>
+    </div>
+
+    <script src="utils.js"></script>
+    <script src="config.js"></script>
+    <script src="api-service.js"></script>
+    <script src="auth-backend.js"></script>
+    <script src="payments.js"></script>
+    <script src="admin.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
