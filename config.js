@@ -14,7 +14,7 @@ const SCORTA_CONFIG = {
         }
 
         // Production - UPDATE THIS after Railway deployment
-        return 'https://YOUR_RAILWAY_APP.up.railway.app/api';
+        return 'https://scorta-app-production.up.railway.app/api';
     })(),
 
     // App version
