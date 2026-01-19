@@ -13,8 +13,8 @@ const SCORTA_CONFIG = {
             return 'http://localhost:3001/api';
         }
 
-        // Production - UPDATE THIS after Railway deployment
-        return 'https://scorta-app-production.up.railway.app/api';
+        // Production - Railway deployment
+        return 'https://scorta-app-production-d717.up.railway.app/api';
     })(),
 
     // App version
