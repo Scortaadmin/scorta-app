@@ -78,6 +78,7 @@ function navigateTo(screenId) {
         renderDashboardProfile();
         loadProviderDescription();
         loadProviderPhotos(); // NEW: Load photos
+        loadProviderPhone(); // NEW: Load phone
     }
     if (screenId === 'screen-client-profile') {
         loadClientProfile();
@@ -125,20 +126,47 @@ async function renderMarketplace() {
             return;
         }
 
-        grid.innerHTML = allProfiles.map(p => `
-            <div class="profile-card" onclick="openProfile('${p._id}')">
-                <div class="profile-img" style="background-image: url('${p.photos && p.photos.length > 0 ? p.photos[0] : (p.avatar || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=400')}')">
+        grid.innerHTML = allProfiles.map((p, profileIndex) => {
+            const photos = p.photos && p.photos.length > 0
+                ? p.photos
+                : [p.avatar || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=400'];
+
+            return `
+            <div class="profile-card" data-profile-id="${p._id}">
+                <div class="profile-carousel-container">
+                    ${photos.map((photo, idx) => `
+                        <div class="profile-img carousel-slide ${idx === 0 ? 'active' : ''}" 
+                             style="background-image: url('${photo}')"
+                             data-slide="${idx}">
+                        </div>
+                    `).join('')}
+                    
+                    ${photos.length > 1 ? `
+                        <div class="carousel-dots">
+                            ${photos.map((_, idx) => `
+                                <span class="dot ${idx === 0 ? 'active' : ''}" data-dot="${idx}"></span>
+                            `).join('')}
+                        </div>
+                        <button class="carousel-nav prev" onclick="event.stopPropagation(); navigateCarousel(${profileIndex}, -1)">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <button class="carousel-nav next" onclick="event.stopPropagation(); navigateCarousel(${profileIndex}, 1)">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    ` : ''}
+                    
                     <div class="badge-row">
                         ${p.verified ? '<span class="badge verified"><i class="fas fa-certificate"></i> Verificada</span>' : ''}
                         ${p.isPremium ? '<span class="badge top-ad"><i class="fas fa-crown"></i> Elite</span>' : ''}
                     </div>
-                    <div class="profile-info-overlay">
+                    <div class="profile-info-overlay" onclick="openProfile('${p._id}')">
                         <h3>${p.name || 'Usuario'}, ${p.age || '25'} <span class="status-dot"></span></h3>
                         <p><i class="fas fa-map-marker-alt"></i> ${p.city || 'Ecuador'}${p.pricing && p.pricing.hourly ? ' · $' + p.pricing.hourly : ''}</p>
                     </div>
                 </div>
             </div>
-        `).join('') + `
+        `;
+        }).join('') + `
             <div id="pwa-install-tile" class="profile-card glass-card pwa-banner-card" onclick="triggerPWAInstall()" style="display: none; background: linear-gradient(135deg, var(--surface) 0%, var(--bg-dark) 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px;">
                 <i class="fas fa-mobile-alt" style="font-size: 2.5rem; color: var(--accent); margin-bottom: 15px;"></i>
                 <h4 style="margin-bottom: 5px;">Instalar App</h4>
@@ -2533,6 +2561,115 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ==================================
+// PHONE / WHATSAPP MANAGEMENT
+// ==================================
+
+// Load provider phone
+async function loadProviderPhone() {
+    const phoneDisplay = document.getElementById('phone-number-text');
+    const phoneInput = document.getElementById('phone-input');
+
+    if (!phoneDisplay) return;
+
+    try {
+        if (!currentProviderProfile) {
+            const response = await API.getMyProfile();
+            if (response.success) {
+                currentProviderProfile = response.data.profile;
+            }
+        }
+
+        if (currentProviderProfile && currentProviderProfile.phone) {
+            phoneDisplay.textContent = currentProviderProfile.phone;
+            if (phoneInput) phoneInput.value = currentProviderProfile.phone;
+        } else {
+            phoneDisplay.textContent = 'No has agregado un número';
+        }
+    } catch (error) {
+        console.error('Error loading phone:', error);
+    }
+}
+
+// Toggle phone editor
+function togglePhoneEdit() {
+    const displayEl = document.getElementById('phone-display');
+    const editorEl = document.getElementById('phone-editor');
+    const editBtn = document.getElementById('edit-phone-btn');
+
+    if (!displayEl || !editorEl) return;
+
+    displayEl.style.display = 'none';
+    editorEl.style.display = 'block';
+    editBtn.style.display = 'none';
+
+    // Focus input
+    const phoneInput = document.getElementById('phone-input');
+    if (phoneInput) phoneInput.focus();
+}
+
+// Cancel phone edit
+function cancelPhoneEdit() {
+    const displayEl = document.getElementById('phone-display');
+    const editorEl = document.getElementById('phone-editor');
+    const editBtn = document.getElementById('edit-phone-btn');
+
+    if (!displayEl || !editorEl) return;
+
+    displayEl.style.display = 'block';
+    editorEl.style.display = 'none';
+    editBtn.style.display = 'inline-block';
+}
+
+// Save phone
+async function savePhone() {
+    const input = document.getElementById('phone-input');
+    const phone = input?.value.trim();
+
+    if (!phone) {
+        showToast('❌ Por favor ingresa un número de teléfono');
+        return;
+    }
+
+    // Basic phone validation
+    const phoneRegex = /^[\d\s\+\-\(\)]+$/;
+    if (!phoneRegex.test(phone)) {
+        showToast('❌ Formato de teléfono inválido');
+        return;
+    }
+
+    if (!currentProviderProfile || !currentProviderProfile._id) {
+        showToast('❌ Error: No se encontró tu perfil');
+        return;
+    }
+
+    try {
+        showToast('🔄 Guardando número...');
+
+        const response = await API.updateProfile(currentProviderProfile._id, { phone });
+
+        if (response.success) {
+            currentProviderProfile.phone = phone;
+            const phoneText = document.getElementById('phone-number-text');
+            if (phoneText) phoneText.textContent = phone;
+
+            cancelPhoneEdit();
+            showToast('✅ Número guardado correctamente');
+        } else {
+            showToast('❌ ' + (response.message || 'Error al guardar'));
+        }
+    } catch (error) {
+        console.error('Error saving phone:', error);
+        showToast('❌ Error al guardar el número');
+    }
+}
+
+// Export functions
+window.loadProviderPhone = loadProviderPhone;
+window.togglePhoneEdit = togglePhoneEdit;
+window.cancelPhoneEdit = cancelPhoneEdit;
+window.savePhone = savePhone;
+
+// ==================================
 // PHOTO MANAGEMENT
 // ==================================
 
@@ -2714,4 +2851,74 @@ function updatePhotoCount() {
 window.loadProviderPhotos = loadProviderPhotos;
 window.triggerPhotoUpload = triggerPhotoUpload;
 window.deletePhoto = deletePhoto;
+
+// ==================================
+// CAROUSEL NAVIGATION (EXPLORE)
+// ==================================
+
+const carouselStates = {};
+
+function navigateCarousel(profileIndex, direction) {
+    const cards = document.querySelectorAll('.profile-card');
+    const card = cards[profileIndex];
+
+    if (!card) return;
+
+    const slides = card.querySelectorAll('.carousel-slide');
+    const dots = card.querySelectorAll('.dot');
+
+    if (slides.length <= 1) return;
+
+    // Get current active index
+    let currentIndex = 0;
+    slides.forEach((slide, idx) => {
+        if (slide.classList.contains('active')) {
+            currentIndex = idx;
+        }
+    });
+
+    // Calculate new index
+    let newIndex = currentIndex + direction;
+    if (newIndex < 0) newIndex = slides.length - 1;
+    if (newIndex >= slides.length) newIndex = 0;
+
+    // Update slides
+    slides[currentIndex].classList.remove('active');
+    slides[newIndex].classList.add('active');
+
+    // Update dots
+    dots[currentIndex].classList.remove('active');
+    dots[newIndex].classList.add('active');
+}
+
+window.navigateCarousel = navigateCarousel;
+
+// ==================================
+// WHATSAPP CONNECTION
+// ==================================
+
+function openWhatsApp() {
+    if (!currentProfileData || !currentProfileData.phone) {
+        showToast('❌ Esta prestadora no ha configurado su WhatsApp');
+        return;
+    }
+
+    //  Remove all non-digit characters except + 
+    const cleanPhone = currentProfileData.phone.replace(/[^\d+]/g, '');
+
+    // Open WhatsApp with the phone number
+    const url = `https://wa.me/${cleanPhone}`;
+    window.open(url, '_blank');
+
+    showToast('✅ Abriendo WhatsApp...');
+
+    // Optional: Track click (analytics)
+    if (currentProfileData._id) {
+        API.incrementProfileView(currentProfileData._id).catch(err => {
+            console.error('Error tracking WhatsApp click:', err);
+        });
+    }
+}
+
+window.openWhatsApp = openWhatsApp;
 

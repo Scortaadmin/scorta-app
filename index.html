@@ -726,6 +726,31 @@
                     </div>
                 </div>
 
+                <!-- Phone/WhatsApp Editor [NEW] -->
+                <div class="section-header">
+                    <h3>Mi Número de WhatsApp</h3>
+                    <button class="text-link" id="edit-phone-btn" onclick="togglePhoneEdit()">Editar</button>
+                </div>
+                <div class="glass-card" style="padding: 20px;">
+                    <p id="phone-display" style="color: var(--text-secondary);">
+                        <i class="fab fa-whatsapp" style="color: #25d366;"></i>
+                        <span id="phone-number-text">No has agregado un número</span>
+                    </p>
+                    <div id="phone-editor" style="display: none;">
+                        <input type="tel" id="phone-input" class="glass-input"
+                            placeholder="+593 99 123 4567 (incluye código de país)" style="width: 100%;">
+                        <p class="hint-text" style="margin-top: 10px; font-size: 0.8rem;">
+                            <i class="fas fa-info-circle"></i> Los clientes podrán contactarte por WhatsApp directamente
+                        </p>
+                        <div style="display: flex; gap: 10px; margin-top: 15px;">
+                            <button class="btn-outline" onclick="cancelPhoneEdit()">Cancelar</button>
+                            <button class="btn-primary-sc" onclick="savePhone()">
+                                <i class="fas fa-save"></i> Guardar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="section-header">
                     <h3>Herramientas de Seguridad</h3>
                 </div>
@@ -1080,7 +1105,7 @@
             </div>
 
             <div class="action-footer">
-                <button class="btn-whatsapp" onclick="showToast('Abriendo WhatsApp...')"><i class="fab fa-whatsapp"></i>
+                <button class="btn-whatsapp" id="whatsapp-btn" onclick="openWhatsApp()"><i class="fab fa-whatsapp"></i>
                     WhatsApp</button>
                 <button class="btn-primary-sc" onclick="showToast('Llamada enmascarada iniciada...')"><i
                         class="fas fa-phone"></i> Llamar</button>

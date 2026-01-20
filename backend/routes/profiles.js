@@ -177,7 +177,7 @@ router.put('/:id',
                 });
             }
 
-            const allowedUpdates = ['name', 'age', 'city', 'price', 'ethnicity', 'nationality', 'description', 'coordinates', 'active'];
+            const allowedUpdates = ['name', 'age', 'city', 'price', 'ethnicity', 'nationality', 'description', 'coordinates', 'active', 'phone'];
             const updates = {};
 
             allowedUpdates.forEach(field => {

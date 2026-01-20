@@ -59,6 +59,11 @@ const profileSchema = new mongoose.Schema({
         type: String,
         maxlength: 1000
     },
+    phone: {
+        type: String,
+        trim: true,
+        required: false
+    },
     active: {
         type: Boolean,
         default: true
