@@ -56,6 +56,30 @@ router.get('/',
     }
 );
 
+// @route   GET /api/profiles/me
+// @desc    Get current user's profile
+// @access  Private
+router.get('/me', protect, async (req, res, next) => {
+    try {
+        const profile = await Profile.findOne({ user: req.user._id })
+            .populate('user', 'name email verified');
+
+        if (!profile) {
+            return res.status(404).json({
+                success: false,
+                message: 'No tienes un perfil creado'
+            });
+        }
+
+        res.json({
+            success: true,
+            data: { profile }
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
 // @route   GET /api/profiles/:id
 // @desc    Get single profile
 // @access  Public
@@ -238,5 +262,50 @@ router.post('/:id/view', async (req, res, next) => {
         next(error);
     }
 });
+
+// @route   PUT /api/profiles/:id/description
+// @desc    Update profile description
+// @access  Private (Owner only)
+router.put('/:id/description',
+    protect,
+    [
+        body('description')
+            .trim()
+            .isLength({ min: 50, max: 1000 })
+            .withMessage('La descripción debe tener entre 50 y 1000 caracteres')
+    ],
+    validate,
+    async (req, res, next) => {
+        try {
+            const profile = await Profile.findById(req.params.id);
+
+            if (!profile) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Perfil no encontrado'
+                });
+            }
+
+            // Check ownership
+            if (profile.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+                return res.status(403).json({
+                    success: false,
+                    message: 'No tienes permiso para modificar este perfil'
+                });
+            }
+
+            profile.description = req.body.description;
+            await profile.save();
+
+            res.json({
+                success: true,
+                message: 'Descripción actualizada exitosamente',
+                data: { description: profile.description }
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+);
 
 module.exports = router;

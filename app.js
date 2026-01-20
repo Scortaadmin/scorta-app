@@ -76,6 +76,7 @@ function navigateTo(screenId) {
     if (screenId === 'screen-dashboard') {
         updateDynamicMetrics();
         renderDashboardProfile();
+        loadProviderDescription(); // NEW: Load description
     }
     if (screenId === 'screen-client-profile') {
         loadClientProfile();
@@ -2391,4 +2392,142 @@ window.navigateToPanel = navigateToPanel;
 window.loadClientProfile = loadClientProfile;
 window.saveClientProfile = saveClientProfile;
 window.handleLogout = handleLogout;
+
+// ==================================
+// PROVIDER DESCRIPTION EDITOR
+// ==================================
+
+let currentProviderProfile = null;
+
+// Load provider description
+async function loadProviderDescription() {
+    const descriptionDisplay = document.getElementById('description-display');
+    const descriptionInput = document.getElementById('description-input');
+
+    if (!descriptionDisplay) return;
+
+    try {
+        const user = AuthModule.getCurrentUser();
+        if (!user || user.role !== 'provider') return;
+
+        // Get provider's profile
+        const response = await API.getMyProfile();
+
+        if (response.success && response.data.profile) {
+            currentProviderProfile = response.data.profile;
+            const description = currentProviderProfile.description || 'No has agregado una descripción aún. Click en "Editar" para agregar una.';
+            descriptionDisplay.textContent = description;
+            if (descriptionInput) descriptionInput.value = currentProviderProfile.description || '';
+            updateCharCount();
+        } else {
+            descriptionDisplay.textContent = 'Click en "Editar" para agregar una descripción.';
+        }
+    } catch (error) {
+        console.error('Error loading description:', error);
+        descriptionDisplay.textContent = 'Error al cargar descripción';
+    }
+}
+
+// Toggle description editor
+function toggleDescriptionEdit() {
+    const displayEl = document.getElementById('description-display');
+    const editorEl = document.getElementById('description-editor');
+    const editBtn = document.getElementById('edit-description-btn');
+
+    if (!displayEl || !editorEl) return;
+
+    displayEl.style.display = 'none';
+    editorEl.style.display = 'block';
+    editBtn.style.display = 'none';
+
+    // Set current description in textarea
+    const descriptionInput = document.getElementById('description-input');
+    if (descriptionInput && currentProviderProfile) {
+        descriptionInput.value = currentProviderProfile.description || '';
+        descriptionInput.focus();
+        updateCharCount();
+    }
+}
+
+// Cancel description edit
+function cancelDescriptionEdit() {
+    const displayEl = document.getElementById('description-display');
+    const editorEl = document.getElementById('description-editor');
+    const editBtn = document.getElementById('edit-description-btn');
+
+    if (!displayEl || !editorEl) return;
+
+    displayEl.style.display = 'block';
+    editorEl.style.display = 'none';
+    editBtn.style.display = 'inline-block';
+}
+
+// Update character count
+function updateCharCount() {
+    const input = document.getElementById('description-input');
+    const counter = document.getElementById('char-count');
+
+    if (input && counter) {
+        const length = input.value.length;
+        counter.textContent = `${length}/1000`;
+        counter.style.color = length < 50 ? 'var(--sc-red)' : 'var(--text-secondary)';
+    }
+}
+
+// Save description
+async function saveDescription() {
+    const input = document.getElementById('description-input');
+    const description = input?.value.trim();
+
+    if (!description || description.length < 50) {
+        showToast('❌ La descripción debe tener al menos 50 caracteres');
+        return;
+    }
+
+    if (description.length > 1000) {
+        showToast('❌ La descripción no puede exceder 1000 caracteres');
+        return;
+    }
+
+    if (!currentProviderProfile || !currentProviderProfile._id) {
+        showToast('❌ Error: No se pudo encontrar tu perfil');
+        return;
+    }
+
+    try {
+        showToast('🔄 Guardando descripción...');
+
+        const response = await API.updateProfileDescription(currentProviderProfile._id, description);
+
+        if (response.success) {
+            // Update local data
+            currentProviderProfile.description = description;
+            const displayEl = document.getElementById('description-display');
+            if (displayEl) displayEl.textContent = description;
+
+            cancelDescriptionEdit();
+            showToast('✅ Descripción actualizada correctamente');
+        } else {
+            showToast('❌ ' + (response.message || 'Error al guardar'));
+        }
+    } catch (error) {
+        console.error('Error saving description:', error);
+        showToast('❌ Error al guardar la descripción');
+    }
+}
+
+// Export functions
+window.loadProviderDescription = loadProviderDescription;
+window.toggleDescriptionEdit = toggleDescriptionEdit;
+window.cancelDescriptionEdit = cancelDescriptionEdit;
+window.saveDescription = saveDescription;
+window.updateCharCount = updateCharCount;
+
+// Add event listener for character count
+document.addEventListener('DOMContentLoaded', () => {
+    const descInput = document.getElementById('description-input');
+    if (descInput) {
+        descInput.addEventListener('input', updateCharCount);
+    }
+});
 

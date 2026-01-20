@@ -131,6 +131,17 @@ class APIService {
         });
     }
 
+    async getMyProfile() {
+        return await this.request('/profiles/me');
+    }
+
+    async updateProfileDescription(id, description) {
+        return await this.request(`/profiles/${id}/description`, {
+            method: 'PUT',
+            body: JSON.stringify({ description })
+        });
+    }
+
     // Favorites endpoints
     async getFavorites() {
         return await this.request('/favorites');

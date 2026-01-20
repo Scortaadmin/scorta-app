@@ -678,6 +678,34 @@
                     </div>
                 </div>
 
+                <!-- Description Editor Section [NEW] -->
+                <div class="section-header">
+                    <h3>Mi Descripción</h3>
+                    <button class="text-link" id="edit-description-btn"
+                        onclick="toggleDescriptionEdit()">Editar</button>
+                </div>
+                <div class="glass-card" style="padding: 20px;">
+                    <p id="description-display" style="color: var(--text-secondary); line-height: 1.6;">
+                        Cargando descripción...
+                    </p>
+                    <div id="description-editor" style="display: none;">
+                        <textarea id="description-input" class="glass-input"
+                            style="min-height: 120px; width: 100%; resize: vertical;" maxlength="1000"
+                            placeholder="Describe tus servicios, experiencia y lo que te hace única... (Mínimo 50 caracteres)"></textarea>
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                            <span id="char-count"
+                                style="font-size: 0.85rem; color: var(--text-secondary);">0/1000</span>
+                            <div style="display: flex; gap: 10px;">
+                                <button class="btn-outline" onclick="cancelDescriptionEdit()">Cancelar</button>
+                                <button class="btn-primary-sc" onclick="saveDescription()">
+                                    <i class="fas fa-save"></i> Guardar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="section-header">
                     <h3>Herramientas de Seguridad</h3>
                 </div>
