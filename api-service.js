@@ -208,6 +208,24 @@ class APIService {
     }
 
     // Payments endpoints
+    async createPaymentIntent(planType, amount, duration) {
+        return await this.request('/payments/create-payment-intent', {
+            method: 'POST',
+            body: JSON.stringify({ planType, amount, duration })
+        });
+    }
+
+    async confirmBoostPayment(paymentIntentId, planType, duration, amount) {
+        return await this.request('/payments/confirm-boost', {
+            method: 'POST',
+            body: JSON.stringify({ paymentIntentId, planType, duration, amount })
+        });
+    }
+
+    async getBoostStatus() {
+        return await this.request('/payments/boost-status');
+    }
+
     async processPayment(paymentData) {
         return await this.request('/payments/process', {
             method: 'POST',

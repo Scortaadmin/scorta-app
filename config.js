@@ -23,8 +23,13 @@ const SCORTA_CONFIG = {
     // Feature flags
     FEATURES: {
         REAL_TIME_CHAT: false,  // Not available in MVP
-        PAYMENTS: false,         // Not available in MVP
+        PAYMENTS: true,          // Stripe payments enabled
         AUTO_VERIFICATION: false // Manual verification only
+    },
+
+    // Stripe Configuration
+    STRIPE: {
+        PUBLISHABLE_KEY: 'pk_test_51QdQnDGl0AeKywAB9J5ZGT9kYEvC8F3Ru4bKYvPGhYXQWZaD8wQZQw5t1oyQhPsLQxOYD4JBN0yInWQf1sGKPPGH00OPNcMkB6' // Test key
     },
 
     // Storage keys

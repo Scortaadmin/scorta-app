@@ -3109,3 +3109,184 @@ window.startChatWithProvider = startChatWithProvider;
 window.openChat = openChat;
 window.sendChatMessage = sendChatMessage;
 
+// ==================================
+// STRIPE PAYMENT PROCESSING
+// ==================================
+
+let stripe = null;
+let elements = null;
+let cardElement = null;
+let currentCheckoutPlan = null;
+
+// Initialize Stripe
+function initializeStripe() {
+    if (!SCORTA_CONFIG || !SCORTA_CONFIG.STRIPE || !SCORTA_CONFIG.STRIPE.PUBLISHABLE_KEY) {
+        console.error('Stripe not configured');
+        return;
+    }
+
+    stripe = Stripe(SCORTA_CONFIG.STRIPE.PUBLISHABLE_KEY);
+    elements = stripe.elements();
+
+    // Create card element with styling
+    cardElement = elements.create('card', {
+        style: {
+            base: {
+                color: '#f8fafc',
+                fontFamily: 'Inter, sans-serif',
+                fontSize: '16px',
+                '::placeholder': {
+                    color: '#94a3b8'
+                }
+            },
+            invalid: {
+                color: '#ef4444'
+            }
+        }
+    });
+}
+
+// Mount card element when checkout screen opens
+function mountCardElement() {
+    if (!cardElement) {
+        initializeStripe();
+    }
+
+    if (cardElement) {
+        const container = document.getElementById('card-element');
+        if (container && !container.firstChild) {
+            cardElement.mount('#card-element');
+
+            // Handle errors
+            cardElement.on('change', (event) => {
+                const displayError = document.getElementById('card-errors');
+                if (event.error) {
+                    displayError.textContent = event.error.message;
+                } else {
+                    displayError.textContent = '';
+                }
+            });
+        }
+    }
+}
+
+// Open checkout screen with plan details
+function openCheckout(planName, amount, duration) {
+    currentCheckoutPlan = {
+        name: planName,
+        amount: amount * 100, // Convert to cents
+        duration: duration,
+        planType: planName.toLowerCase()
+    };
+
+    // Update UI
+    const nameEl = document.getElementById('checkout-plan-name');
+    const durationEl = document.getElementById('checkout-plan-duration');
+    const totalEl = document.getElementById('checkout-total');
+
+    if (nameEl) nameEl.textContent = planName;
+    if (durationEl) durationEl.textContent = duration;
+    if (totalEl) totalEl.textContent = `$${amount}.00`;
+
+    navigateTo('screen-checkout');
+
+    // Mount Stripe Elements
+    setTimeout(() => mountCardElement(), 100);
+}
+
+// Process Stripe payment
+async function processStripePayment() {
+    if (!currentCheckoutPlan) {
+        showToast('❌ Error: No plan selected');
+        return;
+    }
+
+    if (!stripe || !cardElement) {
+        showToast('❌ Error: Stripe not initialized');
+        return;
+    }
+
+    const submitBtn = document.getElementById('submit-payment-btn');
+    const submitText = document.getElementById('submit-text');
+
+    // Disable button and show loading
+    if (submitBtn) submitBtn.disabled = true;
+    if (submitText) submitText.textContent = 'Procesando...';
+
+    try {
+        // Step 1: Create payment intent
+        showToast('🔄 Creando intención de pago...');
+
+        const intentResponse = await API.createPaymentIntent(
+            currentCheckoutPlan.planType,
+            currentCheckoutPlan.amount,
+            currentCheckoutPlan.duration
+        );
+
+        if (!intentResponse.success || !intentResponse.data.clientSecret) {
+            throw new Error(intentResponse.message || 'Error creating payment intent');
+        }
+
+        // Step 2: Confirm payment with Stripe
+        showToast('💳 Procesando tarjeta...');
+
+        const { error, paymentIntent } = await stripe.confirmCardPayment(
+            intentResponse.data.clientSecret,
+            {
+                payment_method: {
+                    card: cardElement,
+                    billing_details: {
+                        name: AuthModule.getCurrentUser()?.name || 'Cliente SCORTA'
+                    }
+                }
+            }
+        );
+
+        if (error) {
+            throw new Error(error.message);
+        }
+
+        if (paymentIntent.status === 'succeeded') {
+            // Step 3: Confirm boost activation
+            showToast('✅ Activando Boost...');
+
+            const confirmResponse = await API.confirmBoostPayment(
+                paymentIntent.id,
+                currentCheckoutPlan.planType,
+                currentCheckoutPlan.duration,
+                currentCheckoutPlan.amount
+            );
+
+            if (confirmResponse.success) {
+                showToast('🎉 ¡Pago exitoso! Boost activado');
+
+                // Navigate back to dashboard
+                setTimeout(() => {
+                    navigateTo('screen-dashboard');
+                }, 2000);
+            } else {
+                showToast('⚠️ Pago procesado pero error al activar boost');
+            }
+        }
+    } catch (error) {
+        console.error('Payment error:', error);
+        showToast('❌ Error: ' + error.message);
+    } finally {
+        // Re-enable button
+        if (submitBtn) submitBtn.disabled = false;
+        if (submitText) submitText.textContent = 'Pagar de forma segura';
+    }
+}
+
+// Export functions
+window.initializeStripe = initializeStripe;
+window.openCheckout = openCheckout;
+window.processStripePayment = processStripePayment;
+
+// Initialize Stripe on page load
+document.addEventListener('DOMContentLoaded', () => {
+    if (SCORTA_CONFIG && SCORTA_CONFIG.FEATURES && SCORTA_CONFIG.FEATURES.PAYMENTS) {
+        initializeStripe();
+    }
+});
+
