@@ -17,6 +17,7 @@ backend/.env.local
 # Credentials and sensitive data
 CREDENTIALS.md
 DEPLOYMENT_SECRETS.md
+railway-env.txt
 *.secret
 *.key
 
