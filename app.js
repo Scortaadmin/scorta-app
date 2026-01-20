@@ -77,6 +77,9 @@ function navigateTo(screenId) {
         updateDynamicMetrics();
         renderDashboardProfile();
     }
+    if (screenId === 'screen-client-profile') {
+        loadClientProfile();
+    }
     if (screenId === 'screen-map') {
         initMap();
     }
@@ -2278,4 +2281,114 @@ window.closeReportReviewModal = closeReportReviewModal;
 window.resolveReportAction = resolveReportAction;
 window.filterTransactions = loadTransactionsList;
 window.savePlatformSettings = savePlatformSettings;
+
+// ==================================
+// CLIENT PROFILE FUNCTIONS
+// ==================================
+
+// Navigate to appropriate panel based on user role
+function navigateToPanel() {
+    const userRole = AuthModule.getUserRole();
+
+    if (!AuthModule.isAuthenticated()) {
+        // User not logged in, redirect to login
+        navigateTo('screen-login');
+        return;
+    }
+
+    if (userRole === 'client') {
+        navigateTo('screen-client-profile');
+    } else if (userRole === 'provider') {
+        navigateTo('screen-dashboard'); // Panel de prestadora
+    } else if (userRole === 'admin') {
+        navigateTo('screen-admin-login'); // Admin panel
+    } else {
+        // Unknown role, default to login
+        navigateTo('screen-login');
+    }
+}
+
+// Load client profile data
+function loadClientProfile() {
+    const user = AuthModule.getCurrentUser();
+    if (!user) {
+        console.error('No user logged in');
+        navigateTo('screen-login');
+        return;
+    }
+
+    // Load user data into form fields
+    const nameInput = document.getElementById('client-profile-name');
+    const phoneInput = document.getElementById('client-profile-phone');
+    const citySelect = document.getElementById('client-profile-city');
+    const emailDisplay = document.getElementById('client-profile-email-display');
+
+    if (nameInput) nameInput.value = user.name || '';
+    if (phoneInput) phoneInput.value = user.phone || '';
+    if (citySelect) citySelect.value = user.city || '';
+    if (emailDisplay) emailDisplay.textContent = user.email || '';
+}
+
+// Save client profile changes
+function saveClientProfile() {
+    const name = document.getElementById('client-profile-name')?.value;
+    const phone = document.getElementById('client-profile-phone')?.value;
+    const city = document.getElementById('client-profile-city')?.value;
+
+    // Validation
+    if (!name || !name.trim()) {
+        showToast('❌ Por favor ingresa tu nombre');
+        return;
+    }
+
+    if (!phone || !phone.trim()) {
+        showToast('❌ Por favor ingresa tu teléfono');
+        return;
+    }
+
+    if (!city) {
+        showToast('❌ Por favor selecciona tu ciudad');
+        return;
+    }
+
+    // Update profile via AuthModule
+    const result = AuthModule.updateUserProfile({
+        name: name.trim(),
+        phone: phone.trim(),
+        city: city,
+        profileComplete: true
+    });
+
+    if (result.success) {
+        showToast('✅ Perfil actualizado correctamente');
+
+        // Optional: Update API if using backend
+        if (AuthModule.isAuthenticated() && typeof API !== 'undefined') {
+            API.updateProfile({
+                name: name.trim(),
+                phone: phone.trim(),
+                city: city
+            }).catch(err => {
+                console.error('Error updating profile in backend:', err);
+            });
+        }
+    } else {
+        showToast('❌ Error al actualizar perfil: ' + (result.message || ''));
+    }
+}
+
+// Handle logout
+function handleLogout() {
+    if (confirm('¿Estás seguro que deseas cerrar sesión?')) {
+        AuthModule.logoutUser();
+        showToast('Sesión cerrada correctamente');
+        navigateTo('screen-login');
+    }
+}
+
+// Export functions to window
+window.navigateToPanel = navigateToPanel;
+window.loadClientProfile = loadClientProfile;
+window.saveClientProfile = saveClientProfile;
+window.handleLogout = handleLogout;
 

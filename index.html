@@ -752,6 +752,113 @@
             </div>
         </div>
 
+        <!-- Client Profile Screen [NEW] -->
+        <div id="screen-client-profile" class="screen">
+            <header class="main-header">
+                <div class="header-top">
+                    <button class="back-btn" onclick="navigateTo('screen-explore')"><i
+                            class="fas fa-arrow-left"></i></button>
+                    <h2 class="header-title">Mi Perfil</h2>
+                    <button class="icon-btn" onclick="navigateTo('screen-wallet')"><i
+                            class="fas fa-wallet"></i></button>
+                </div>
+            </header>
+
+            <div class="dashboard-content">
+                <!-- User Summary Card -->
+                <div class="glass-card" style="padding: 25px; margin-bottom: 20px; text-align: center;">
+                    <div
+                        style="width: 80px; height: 80px; border-radius: 100%; background: linear-gradient(135deg, var(--accent) 0%, #c0392b 100%); margin: 0 auto 15px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-user" style="font-size: 2rem; color: white;"></i>
+                    </div>
+                    <p id="client-profile-email-display"
+                        style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 5px;"></p>
+                    <span class="badge"
+                        style="background: rgba(16, 185, 129, 0.15); color: var(--success); margin-top: 10px; display: inline-block;">
+                        <i class="fas fa-shield-alt"></i> Cliente Verificado
+                    </span>
+                </div>
+
+                <!-- Personal Information -->
+                <div class="section-header">
+                    <h3>Información Personal</h3>
+                </div>
+                <div class="glass-card" style="padding: 20px; margin-bottom: 20px;">
+                    <div class="form-group">
+                        <label>Nombre Completo</label>
+                        <input type="text" id="client-profile-name" class="glass-input"
+                            placeholder="Tu nombre completo">
+                    </div>
+                    <div class="form-group">
+                        <label>Teléfono</label>
+                        <input type="tel" id="client-profile-phone" class="glass-input" placeholder="+593 99 123 4567">
+                    </div>
+                    <div class="form-group">
+                        <label>Ciudad</label>
+                        <select id="client-profile-city" class="glass-input">
+                            <option value="">Seleccionar ciudad</option>
+                            <option value="Quito">Quito</option>
+                            <option value="Guayaquil">Guayaquil</option>
+                            <option value="Cuenca">Cuenca</option>
+                            <option value="Manta">Manta</option>
+                            <option value="Santo Domingo">Santo Domingo</option>
+                            <option value="Machala">Machala</option>
+                            <option value="Portoviejo">Portoviejo</option>
+                            <option value="Loja">Loja</option>
+                            <option value="Ambato">Ambato</option>
+                            <option value="Esmeraldas">Esmeraldas</option>
+                            <option value="Quevedo">Quevedo</option>
+                            <option value="Riobamba">Riobamba</option>
+                            <option value="Ibarra">Ibarra</option>
+                            <option value="Latacunga">Latacunga</option>
+                            <option value="Tulcán">Tulcán</option>
+                            <option value="Nueva Loja">Nueva Loja</option>
+                            <option value="Santa Elena">Santa Elena</option>
+                        </select>
+                    </div>
+                    <button class="btn-primary-sc w-full" style="width: 100%; margin-top: 20px;"
+                        onclick="saveClientProfile()">
+                        <i class="fas fa-save"></i> Guardar Cambios
+                    </button>
+                </div>
+
+                <!-- Preferences Section -->
+                <div class="section-header">
+                    <h3>Preferencias</h3>
+                </div>
+                <div class="safety-tools-list">
+                    <div class="tool-item glass-card">
+                        <i class="fas fa-bell"></i>
+                        <span>Notificaciones</span>
+                        <input type="checkbox" id="client-notifications" checked>
+                    </div>
+                    <div class="tool-item glass-card">
+                        <i class="fas fa-eye-slash"></i>
+                        <span>Modo Discreto</span>
+                        <input type="checkbox" id="client-privacy-mode">
+                    </div>
+                </div>
+
+                <!-- Account Actions -->
+                <div class="section-header" style="margin-top: 30px;">
+                    <h3>Cuenta</h3>
+                </div>
+                <button class="btn-outline w-full" style="width: 100%; margin-bottom: 10px;"
+                    onclick="navigateTo('screen-wallet')">
+                    <i class="fas fa-wallet"></i> Mi Billetera
+                </button>
+                <button class="btn-outline w-full" style="width: 100%; margin-bottom: 10px;"
+                    onclick="navigateTo('screen-favorites')">
+                    <i class="fas fa-heart"></i> Ver Favoritos
+                </button>
+                <button class="btn-outline w-full"
+                    style="width: 100%; margin-bottom: 20px; color: var(--error); border-color: var(--error);"
+                    onclick="handleLogout()">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                </button>
+            </div>
+        </div>
+
         <!-- Favorites Screen [NEW] -->
         <div id="screen-favorites" class="screen">
             <header class="main-header">
@@ -1173,7 +1280,7 @@
                     class="fas fa-plus"></i></button>
             <button id="nav-messages" class="nav-item" onclick="navigateTo('screen-messages')"><i
                     class="fas fa-comment-dots"></i><span>Mensajes</span></button>
-            <button id="nav-dashboard" class="nav-item" onclick="navigateTo('screen-dashboard')">
+            <button id="nav-dashboard" class="nav-item" onclick="navigateToPanel()">
                 <i class="fas fa-user-circle"></i><span>Panel</span>
             </button>
         </nav>
