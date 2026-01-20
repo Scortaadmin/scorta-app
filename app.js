@@ -98,7 +98,34 @@ function navigateTo(screenId) {
     }
 
     window.scrollTo(0, 0);
+
+    // Role-based UI visibility
+    updateUIForRole();
 }
+
+// Update UI elements based on user role
+function updateUIForRole() {
+    const role = AuthModule.getUserRole();
+    const publishBtn = document.getElementById('nav-publish');
+
+    // Hide publish button for clients
+    if (role === 'client' && publishBtn) {
+        publishBtn.style.display = 'none';
+    } else if (publishBtn) {
+        publishBtn.style.display = '';
+    }
+}
+
+// Logout function
+function logout() {
+    if (confirm('¿Estás seguro que quieres cerrar sesión?')) {
+        AuthModule.logout();
+        navigateTo('screen-explore');
+        showToast('✅ Sesión cerrada exitosamente');
+    }
+}
+
+window.logout = logout;
 
 // Marketplace Logic
 let activeFilter = 'all';
@@ -135,7 +162,7 @@ async function renderMarketplace() {
                 : [p.avatar || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=400'];
 
             return `
-            <div class="profile-card" data-profile-id="${p._id}">
+            <div class="profile-card" data-profile-id="${p._id}" onclick="openProfile('${p._id}')">
                 <div class="profile-carousel-container">
                     ${photos.map((photo, idx) => `
                         <div class="profile-img carousel-slide ${idx === 0 ? 'active' : ''}" 
@@ -150,10 +177,10 @@ async function renderMarketplace() {
                                 <span class="dot ${idx === 0 ? 'active' : ''}" data-dot="${idx}"></span>
                             `).join('')}
                         </div>
-                        <button class="carousel-nav prev" onclick="event.stopPropagation(); navigateCarousel(${profileIndex}, -1)">
+                        <button class="carousel-nav prev" onclick="event.stopPropagation(); navigateCarouselByCard(this, -1)">
                             <i class="fas fa-chevron-left"></i>
                         </button>
-                        <button class="carousel-nav next" onclick="event.stopPropagation(); navigateCarousel(${profileIndex}, 1)">
+                        <button class="carousel-nav next" onclick="event.stopPropagation(); navigateCarouselByCard(this, 1)">
                             <i class="fas fa-chevron-right"></i>
                         </button>
                     ` : ''}
@@ -2895,6 +2922,36 @@ function navigateCarousel(profileIndex, direction) {
 }
 
 window.navigateCarousel = navigateCarousel;
+
+// New carousel navigation using button element reference
+function navigateCarouselByCard(buttonElement, direction) {
+    const card = buttonElement.closest('.profile-card');
+    if (!card) return;
+
+    const slides = card.querySelectorAll('.carousel-slide');
+    const dots = card.querySelectorAll('.dot');
+
+    if (slides.length <= 1) return;
+
+    let currentIndex = 0;
+    slides.forEach((slide, idx) => {
+        if (slide.classList.contains('active')) currentIndex = idx;
+    });
+
+    let newIndex = currentIndex + direction;
+    if (newIndex < 0) newIndex = slides.length - 1;
+    if (newIndex >= slides.length) newIndex = 0;
+
+    slides[currentIndex].classList.remove('active');
+    slides[newIndex].classList.add('active');
+
+    if (dots.length > 0) {
+        dots[currentIndex].classList.remove('active');
+        dots[newIndex].classList.add('active');
+    }
+}
+
+window.navigateCarouselByCard = navigateCarouselByCard;
 
 // ==================================
 // WHATSAPP CONNECTION

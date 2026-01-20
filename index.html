@@ -821,6 +821,11 @@
                         onclick="saveUserSettings()">
                         Guardar Cambios
                     </button>
+                    <button class="btn-outline w-full"
+                        style="width: 100%; margin-top: 15px; border: 1px solid var(--danger); color: var(--danger);"
+                        onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                    </button>
                 </div>
             </div>
         </div>
@@ -1355,7 +1360,7 @@
             </button>
             <button id="nav-favorites" class="nav-item" onclick="navigateTo('screen-favorites')"><i
                     class="fas fa-heart"></i><span>Favoritos</span></button>
-            <button class="nav-item publish-btn" onclick="navigateTo('screen-create-ad')"><i
+            <button id="nav-publish" class="nav-item publish-btn" onclick="navigateTo('screen-create-ad')"><i
                     class="fas fa-plus"></i></button>
             <button id="nav-messages" class="nav-item" onclick="navigateTo('screen-messages')"><i
                     class="fas fa-comment-dots"></i><span>Mensajes</span></button>
