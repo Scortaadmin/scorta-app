@@ -308,4 +308,99 @@ router.put('/:id/description',
     }
 );
 
+// @route   PUT /api/profiles/:id/photos
+// @desc    Add photos to profile
+// @access  Private (Owner only)
+router.put('/:id/photos',
+    protect,
+    async (req, res, next) => {
+        try {
+            const profile = await Profile.findById(req.params.id);
+
+            if (!profile) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Perfil no encontrado'
+                });
+            }
+
+            // Check ownership
+            if (profile.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+                return res.status(403).json({
+                    success: false,
+                    message: 'No tienes permiso para modificar este perfil'
+                });
+            }
+
+            const { photos } = req.body;
+
+            if (!Array.isArray(photos)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Photos debe ser un array'
+                });
+            }
+
+            // Add new photos (max 10 total)
+            profile.photos = [...new Set([...profile.photos, ...photos])].slice(0, 10);
+            await profile.save();
+
+            res.json({
+                success: true,
+                message: 'Fotos actualizadas exitosamente',
+                data: { photos: profile.photos }
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+);
+
+// @route   DELETE /api/profiles/:id/photos/:photoIndex
+// @desc    Remove photo from profile
+// @access  Private (Owner only)
+router.delete('/:id/photos/:photoIndex',
+    protect,
+    async (req, res, next) => {
+        try {
+            const profile = await Profile.findById(req.params.id);
+
+            if (!profile) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Perfil no encontrado'
+                });
+            }
+
+            // Check ownership
+            if (profile.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+                return res.status(403).json({
+                    success: false,
+                    message: 'No tienes permiso para modificar este perfil'
+                });
+            }
+
+            const index = parseInt(req.params.photoIndex);
+
+            if (isNaN(index) || index < 0 || index >= profile.photos.length) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Índice de foto inválido'
+                });
+            }
+
+            profile.photos.splice(index, 1);
+            await profile.save();
+
+            res.json({
+                success: true,
+                message: 'Foto eliminada exitosamente',
+                data: { photos: profile.photos }
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+);
+
 module.exports = router;

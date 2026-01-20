@@ -76,7 +76,8 @@ function navigateTo(screenId) {
     if (screenId === 'screen-dashboard') {
         updateDynamicMetrics();
         renderDashboardProfile();
-        loadProviderDescription(); // NEW: Load description
+        loadProviderDescription();
+        loadProviderPhotos(); // NEW: Load photos
     }
     if (screenId === 'screen-client-profile') {
         loadClientProfile();
@@ -2530,4 +2531,187 @@ document.addEventListener('DOMContentLoaded', () => {
         descInput.addEventListener('input', updateCharCount);
     }
 });
+
+// ==================================
+// PHOTO MANAGEMENT
+// ==================================
+
+let providerPhotos = [];
+
+// Load provider photos
+async function loadProviderPhotos() {
+    const photosGrid = document.getElementById('photos-grid');
+    const badge = document.getElementById('photo-count-badge');
+
+    if (!photosGrid) return;
+
+    try {
+        if (!currentProviderProfile) {
+            const response = await API.getMyProfile();
+            if (response.success) {
+                currentProviderProfile = response.data.profile;
+            }
+        }
+
+        providerPhotos = currentProviderProfile?.photos || [];
+        renderPhotosGrid();
+
+        if (badge) {
+            const count = providerPhotos.length;
+            badge.textContent = `${count}/5`;
+            badge.style.background = count >= 5 ? 'var(--success)' : 'var(--danger)';
+        }
+    } catch (error) {
+        console.error('Error loading photos:', error);
+    }
+}
+
+// Render photos grid
+function renderPhotosGrid() {
+    const grid = document.getElementById('photos-grid');
+    if (!grid) return;
+
+    // Clear grid
+    grid.innerHTML = '';
+
+    // Show existing photos
+    providerPhotos.forEach((photo, index) => {
+        const photoEl = document.createElement('div');
+        photoEl.className = 'photo-item';
+        photoEl.innerHTML = `
+            <img src="${photo}" alt="Foto ${index + 1}">
+            <button class="delete-photo-btn" onclick="deletePhoto(${index})">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        grid.appendChild(photoEl);
+    });
+
+    // Add placeholder if less than max
+    if (providerPhotos.length < 10) {
+        const placeholder = document.createElement('div');
+        placeholder.className = 'photo-item';
+        placeholder.innerHTML = `<div class="photo-placeholder"><i class="fas fa-plus"></i></div>`;
+        placeholder.onclick = triggerPhotoUpload;
+        grid.appendChild(placeholder);
+    }
+}
+
+// Trigger photo upload
+function triggerPhotoUpload() {
+    const input = document.getElementById('photo-upload-input');
+    if (input) {
+        input.click();
+    }
+}
+
+// Handle photo selection
+document.addEventListener('DOMContentLoaded', () => {
+    const photoInput = document.getElementById('photo-upload-input');
+    if (photoInput) {
+        photoInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            if (files.length > 0) {
+                uploadPhotos(files);
+            }
+        });
+    }
+});
+
+// Upload photos
+async function uploadPhotos(files) {
+    if (!currentProviderProfile || !currentProviderProfile._id) {
+        showToast('❌ Error: No se encontró tu perfil');
+        return;
+    }
+
+    const remaining = 10 - providerPhotos.length;
+    if (remaining <= 0) {
+        showToast('❌ Ya tienes el máximo de 10 fotos');
+        return;
+    }
+
+    const filesToUpload = files.slice(0, remaining);
+    showToast(`🔄 Subiendo ${filesToUpload.length} foto(s)...`);
+
+    try {
+        // Upload photos using API
+        const response = await API.uploadProfilePhotos(filesToUpload);
+
+        if (response.success) {
+            const photoUrls = response.data.urls || [];
+
+            // Update profile with new photos
+            const updateResponse = await API.updateProfilePhotos(
+                currentProviderProfile._id,
+                photoUrls
+            );
+
+            if (updateResponse.success) {
+                providerPhotos = updateResponse.data.photos;
+                currentProviderProfile.photos = providerPhotos;
+                renderPhotosGrid();
+                updatePhotoCount();
+                showToast('✅ Fotos subidas exitosamente');
+            } else {
+                showToast('❌ Error al actualizar perfil');
+            }
+        } else {
+            showToast('❌ Error al subir fotos');
+        }
+    } catch (error) {
+        console.error('Error uploading photos:', error);
+        showToast('❌ Error al subir las fotos');
+    }
+
+    // Clear input
+    const input = document.getElementById('photo-upload-input');
+    if (input) input.value = '';
+}
+
+// Delete photo
+async function deletePhoto(index) {
+    if (!confirm('¿Estás seguro de eliminar esta foto?')) {
+        return;
+    }
+
+    if (!currentProviderProfile || !currentProviderProfile._id) {
+        showToast('❌ Error: No se encontró tu perfil');
+        return;
+    }
+
+    try {
+        showToast('🔄 Eliminando foto...');
+
+        const response = await API.deleteProfilePhoto(currentProviderProfile._id, index);
+
+        if (response.success) {
+            providerPhotos = response.data.photos;
+            currentProviderProfile.photos = providerPhotos;
+            renderPhotosGrid();
+            updatePhotoCount();
+            showToast('✅ Foto eliminada');
+        } else {
+            showToast('❌ Error al eliminar foto');
+        }
+    } catch (error) {
+        console.error('Error deleting photo:', error);
+        showToast('❌ Error al eliminar la foto');
+    }
+}
+
+// Update photo count badge
+function updatePhotoCount() {
+    const badge = document.getElementById('photo-count-badge');
+    if (badge) {
+        const count = providerPhotos.length;
+        badge.textContent = `${count}/5`;
+        badge.style.background = count >= 5 ? 'var(--success)' : 'var(--danger)';
+    }
+}
+
+// Export functions
+window.loadProviderPhotos = loadProviderPhotos;
+window.triggerPhotoUpload = triggerPhotoUpload;
+window.deletePhoto = deletePhoto;
 

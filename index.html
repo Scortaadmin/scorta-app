@@ -678,6 +678,26 @@
                     </div>
                 </div>
 
+                <!-- Photo Gallery Management [NEW] -->
+                <div class="section-header">
+                    <h3>Mis Fotos del Perfil</h3>
+                    <span id="photo-count-badge" class="badge">0/5</span>
+                </div>
+                <div class="glass-card" style="padding: 20px;">
+                    <p class="hint-text" style="margin-bottom: 15px;">
+                        <i class="fas fa-info-circle"></i> Agrega mínimo 5 fotos para publicar tu perfil. Máximo 10
+                        fotos.
+                    </p>
+                    <div id="photos-grid" class="photos-upload-grid">
+                        <!-- Photos will be loaded here dynamically -->
+                    </div>
+                    <input type="file" id="photo-upload-input" hidden accept="image/*" multiple>
+                    <button class="btn-outline w-full" id="upload-photos-btn" onclick="triggerPhotoUpload()"
+                        style="margin-top: 15px;">
+                        <i class="fas fa-camera"></i> Agregar Fotos
+                    </button>
+                </div>
+
                 <!-- Description Editor Section [NEW] -->
                 <div class="section-header">
                     <h3>Mi Descripción</h3>

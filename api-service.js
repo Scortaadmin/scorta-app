@@ -142,6 +142,19 @@ class APIService {
         });
     }
 
+    async updateProfilePhotos(id, photos) {
+        return await this.request(`/profiles/${id}/photos`, {
+            method: 'PUT',
+            body: JSON.stringify({ photos })
+        });
+    }
+
+    async deleteProfilePhoto(id, photoIndex) {
+        return await this.request(`/profiles/${id}/photos/${photoIndex}`, {
+            method: 'DELETE'
+        });
+    }
+
     // Favorites endpoints
     async getFavorites() {
         return await this.request('/favorites');
