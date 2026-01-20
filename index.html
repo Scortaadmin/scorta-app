@@ -963,10 +963,15 @@
                 </div>
             </header>
             <div id="messages-list" class="detail-content">
+                <!-- Dynamic Conversations List -->
+                <div id="conversations-container">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+
                 <!-- Static Support Chat -->
                 <div class="glass-card chat-entry"
                     style="padding: 15px; display: flex; align-items: center; gap: 15px; margin-bottom: 10px; cursor: pointer;"
-                    onclick="openChat('Soporte SCORTA')">
+                    onclick="openChat('support', 'Soporte SCORTA')">
                     <div
                         style="width: 50px; height: 50px; border-radius: 100%; background: var(--surface-light); display: flex; align-items: center; justify-content: center;">
                         <i class="fas fa-user-shield" style="color: var(--accent);"></i>
@@ -993,8 +998,9 @@
                 <!-- Messages will appear here -->
             </div>
             <div class="chat-input-area">
-                <input type="text" id="chat-input-field" placeholder="Escribe un mensaje...">
-                <button class="btn-send" onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+                <input type="text" id="message-input" placeholder="Escribe un mensaje..."
+                    onkeypress="if(event.key === 'Enter') sendChatMessage()">
+                <button class="btn-send" onclick="sendChatMessage()"><i class="fas fa-paper-plane"></i></button>
             </div>
         </div>
 

@@ -93,6 +93,9 @@ function navigateTo(screenId) {
     if (screenId === 'screen-payment-methods') {
         loadPaymentMethods();
     }
+    if (screenId === 'screen-messages') {
+        loadConversations(); // NEW: Load conversations
+    }
 
     window.scrollTo(0, 0);
 }
@@ -2921,4 +2924,188 @@ function openWhatsApp() {
 }
 
 window.openWhatsApp = openWhatsApp;
+
+// ==================================
+// CHAT SYSTEM
+// ==================================
+
+let currentChatUser = null;
+
+// Load conversations list
+async function loadConversations() {
+    const container = document.getElementById('conversations-container');
+    if (!container) return;
+
+    container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-secondary);"><i class="fas fa-spinner fa-spin"></i> Cargando conversaciones...</div>';
+
+    try {
+        const response = await API.getConversations();
+
+        if (!response.success || !response.data || !response.data.conversations) {
+            container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-secondary);">No tienes conversaciones aún</div>';
+            return;
+        }
+
+        const conversations = response.data.conversations;
+
+        if (conversations.length === 0) {
+            container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-secondary);">No tienes conversaciones aún</div>';
+            return;
+        }
+
+        container.innerHTML = conversations.map(conv => `
+            <div class="glass-card chat-entry" 
+                 style="padding: 15px; display: flex; align-items: center; gap: 15px; margin-bottom: 10px; cursor: pointer;"
+                 onclick="openChat('${conv.userId}', '${conv.name}')">
+                <div style="width: 50px; height: 50px; border-radius: 100%; background: var(--surface-light); display: flex; align-items: center; justify-content: center;">
+                    <span style="font-size: 1.5rem;">${conv.name.charAt(0).toUpperCase()}</span>
+                </div>
+                <div style="flex: 1;">
+                    <h4 style="margin: 0;">${conv.name}</h4>
+                    <p style="margin: 0; font-size: 0.8rem; color: var(--text-secondary);">
+                        ${conv.lastMessage || 'Sin mensajes'}
+                    </p>
+                </div>
+                ${conv.unreadCount > 0 ? `<span class="badge" style="background: var(--accent); color: var(--bg-dark); padding: 4px 8px;">${conv.unreadCount}</span>` : ''}
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading conversations:', error);
+        container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--danger);">Error al cargar conversaciones</div>';
+    }
+}
+
+// Start chat with provider (from profile screen)
+function startChatWithProvider() {
+    if (!AuthModule.isAuthenticated()) {
+        showToast('❌ Debes iniciar sesión para enviar mensajes');
+        navigateTo('screen-login');
+        return;
+    }
+
+    if (!currentProfileData) {
+        showToast('❌ Error al cargar perfil');
+        return;
+    }
+
+    const provider = currentProfileData;
+    const providerId = provider.user?._id || provider.userId || provider._id;
+    const providerName = provider.name || 'Prestadora';
+
+    openChat(providerId, providerName);
+}
+
+// Open chat screen
+function openChat(userId, userName) {
+    currentChatUser = { id: userId, name: userName };
+
+    // Update chat header
+    const chatHeader = document.getElementById('chat-with-name');
+    if (chatHeader) {
+        chatHeader.textContent = userName;
+    }
+
+    // Navigate to chat screen
+    navigateTo('screen-chat');
+
+    // Load messages
+    loadChatMessages(userId);
+}
+
+// Load chat messages
+async function loadChatMessages(userId) {
+    const container = document.getElementById('messages-container');
+    if (!container) return;
+
+    container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-secondary);"><i class="fas fa-spinner fa-spin"></i> Cargando mensajes...</div>';
+
+    try {
+        const response = await API.getMessages(userId);
+
+        if (!response.success || !response.data || !response.data.messages) {
+            container.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-secondary);">Aún no hay mensajes. ¡Inicia la conversación!</div>';
+            return;
+        }
+
+        const messages = response.data.messages;
+        const currentUser = AuthModule.getCurrentUser();
+
+        if (messages.length === 0) {
+            container.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-secondary);">Aún no hay mensajes. ¡Inicia la conversación!</div>';
+            return;
+        }
+
+        container.innerHTML = messages.map(msg => {
+            const isMine = msg.sender === currentUser._id || msg.sender._id === currentUser._id;
+            return `
+                <div class="message ${isMine ? 'sent' : 'received'}">
+                    <div class="message-bubble">
+                        <p>${msg.text || msg.content || ''}</p>
+                        <span class="message-time">${formatMessageTime(msg.createdAt)}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Scroll to bottom
+        container.scrollTop = container.scrollHeight;
+    } catch (error) {
+        console.error('Error loading messages:', error);
+        container.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--danger);">Error al cargar mensajes</div>';
+    }
+}
+
+// Send message
+async function sendChatMessage() {
+    const input = document.getElementById('message-input');
+    const text = input?.value.trim();
+
+    if (!text) return;
+
+    if (!currentChatUser || !currentChatUser.id) {
+        showToast('❌ Error: No se pudo identificar el destinatario');
+        return;
+    }
+
+    try {
+        const response = await API.sendMessage(currentChatUser.id, text);
+
+        if (response.success) {
+            // Clear input
+            if (input) input.value = '';
+
+            // Reload messages
+            loadChatMessages(currentChatUser.id);
+        } else {
+            showToast('❌ Error al enviar mensaje');
+        }
+    } catch (error) {
+        console.error('Error sending message:', error);
+        showToast('❌ Error al enviar mensaje');
+    }
+}
+
+// Format message timestamp
+function formatMessageTime(timestamp) {
+    if (!timestamp) return '';
+
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+
+    if (diffMins < 1) return 'Ahora';
+    if (diffMins < 60) return `Hace ${diffMins}m`;
+
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `Hace ${diffHours}h`;
+
+    return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+}
+
+// Export functions
+window.loadConversations = loadConversations;
+window.startChatWithProvider = startChatWithProvider;
+window.openChat = openChat;
+window.sendChatMessage = sendChatMessage;
 
