@@ -105,10 +105,11 @@ async function navigateTo(screenId) {
     updateUIForRole();
 }
 
-// Update UI elements based on user role
+// Update UI elements based on user role - FIX BUGS #3 and #6
 function updateUIForRole() {
     const isAuthenticated = AuthModule.isAuthenticated();
     const role = AuthModule.getUserRole();
+    const user = AuthModule.getCurrentUser();
 
     // Get UI elements
     const publishBtn = document.getElementById('nav-publish');
@@ -130,27 +131,37 @@ function updateUIForRole() {
 
     // Authenticated users
     if (role === 'client') {
-        // Hide provider-specific features for clients
+        // Hide provider-specific features for clients (FIX BUG #3)
         if (publishBtn) publishBtn.style.display = 'none';
         if (dashboardNavItem) dashboardNavItem.style.display = 'none';
     } else if (role === 'provider') {
-        // Show provider features
+        // Check if profile is complete before showing dashboard/panel (FIX BUG #6)
+        const profileComplete = user?.profileCompleted || false;
+
+        // Show create ad button only for providers
         if (publishBtn) publishBtn.style.display = '';
-        if (dashboardNavItem) dashboardNavItem.style.display = '';
+
+        // Show dashboard/panel only if profile is complete
+        if (dashboardNavItem) {
+            dashboardNavItem.style.display = profileComplete ? '' : 'none';
+        }
     }
 }
 
-// Logout function
+// Logout function - FIX BUG #2
 async function logout() {
     if (confirm('¿Estás seguro que quieres cerrar sesión?')) {
         await AuthModule.logoutUser();
 
-        // Clear favorites cache
+        // Clear all cached data
         favorites = [];
+        currentProfileData = null;
         localStorage.removeItem('scorta_favorites');
+        localStorage.removeItem('scorta_custom_ads');
+        localStorage.removeItem('scorta_boost_active');
 
-        // Redirect to login screen instead of explore
-        navigateTo('screen-login');
+        // Redirect to age gate screen
+        navigateTo('screen-gate');
         showToast('✅ Sesión cerrada exitosamente');
 
         // Update UI for logged-out state
@@ -181,15 +192,20 @@ async function renderMarketplace() {
         if (advancedFilters.ethnicity !== 'all') filters.ethnicity = advancedFilters.ethnicity;
         if (advancedFilters.nationality !== 'all') filters.nationality = advancedFilters.nationality;
 
-        // ROLE-BASED FILTERING
-        // For providers: show clients (their potential customers)
+        // ROLE-BASED FILTERING - FIX BUGS #7 and #8
+        // For providers: show clients with whom they've had contact
         // For clients: show providers (service providers)
         const user = AuthModule.getCurrentUser();
         const userRole = user?.role;
 
         if (userRole === 'provider') {
-            // Providers see clients only
+            // Providers see only clients they've contacted
             filters.role = 'client';
+            filters.hasContact = true; // Only clients with previous contact
+
+            // Bug #7: "Verificados" filter shows only VERIFIED clients with contact
+            // Bug #8: "Todos" filter shows ALL clients with contact (verified or not)
+            // The activeFilter 'verified' is already handled above at line 189
         } else {
             // Clients (or non-authenticated users) see providers
             filters.role = 'provider';
@@ -263,6 +279,33 @@ async function renderMarketplace() {
 function handleSearch(val) {
     searchQuery = val;
     renderMarketplace();
+}
+
+// Carousel Navigation Function - FIX BUG #1
+function navigateCarouselByCard(button, direction) {
+    const card = button.closest('.profile-card');
+    if (!card) return;
+
+    const slides = card.querySelectorAll('.carousel-slide');
+    const dots = card.querySelectorAll('.dot');
+
+    if (slides.length === 0) return;
+
+    let currentIndex = Array.from(slides).findIndex(slide => slide.classList.contains('active'));
+    if (currentIndex === -1) currentIndex = 0;
+
+    // Remove active class from current
+    slides[currentIndex].classList.remove('active');
+    if (dots[currentIndex]) dots[currentIndex].classList.remove('active');
+
+    // Calculate new index
+    let newIndex = currentIndex + direction;
+    if (newIndex < 0) newIndex = slides.length - 1;
+    if (newIndex >= slides.length) newIndex = 0;
+
+    // Add active class to new
+    slides[newIndex].classList.add('active');
+    if (dots[newIndex]) dots[newIndex].classList.add('active');
 }
 
 function filterBy(type) {
@@ -353,6 +396,7 @@ async function toggleFavorite() {
     }
 }
 
+// Render Favorites - FIX BUG #4
 async function renderFavorites() {
     const list = document.getElementById('favorites-list');
     if (!list) return;
@@ -371,7 +415,14 @@ async function renderFavorites() {
         list.innerHTML = '<div style="grid-column: span 2; text-align: center; padding: 40px;"><i class="fas fa-spinner fa-spin"></i> Cargando favoritos...</div>';
 
         const response = await API.getFavorites();
-        favorites = response.success ? response.data.favorites : [];
+
+        // Ensure favorites is always an array
+        if (response.success && Array.isArray(response.data.favorites)) {
+            favorites = response.data.favorites;
+        } else {
+            console.warn('Invalid favorites response:', response);
+            favorites = [];
+        }
 
         if (favorites.length === 0) {
             list.innerHTML = `
@@ -382,10 +433,16 @@ async function renderFavorites() {
             return;
         }
 
-        list.innerHTML = favorites.map(profile => `
-            <div class="profile-card glass-card" onclick="openProfile('${profile._id || profile.id}')">
+        list.innerHTML = favorites.map(profile => {
+            const profileId = profile._id || profile.id;
+            const profileImage = profile.photos && profile.photos.length > 0
+                ? profile.photos[0]
+                : (profile.avatar || profile.img || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=400');
+
+            return `
+            <div class="profile-card glass-card" onclick="openProfile('${profileId}')">
                 <div class="badge-featured">Favorito</div>
-                <img src="${profile.photos && profile.photos.length > 0 ? profile.photos[0] : (profile.avatar || profile.img || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=400')}" alt="${profile.name || 'Usuario'}">
+                <img src="${profileImage}" alt="${profile.name || 'Usuario'}">
                 <div class="profile-info">
                     <div class="profile-name">
                         ${profile.name || 'Usuario'}, ${profile.age || '25'} ${profile.verified ? '<i class="fas fa-certificate verified-check"></i>' : ''}
@@ -395,10 +452,16 @@ async function renderFavorites() {
                     </div>
                 </div>
             </div>
-        `).join('');
+        `;
+        }).join('');
     } catch (error) {
         console.error('Error loading favorites:', error);
-        list.innerHTML = '<div style="grid-column: span 2; text-align: center; padding: 40px; color: var(--error);">Error al cargar favoritos. <button class="btn-outline" onclick="renderFavorites()" style="margin-top: 10px;">Reintentar</button></div>';
+        favorites = []; // Clear on error
+        list.innerHTML = `
+            <div style="grid-column: span 2; text-align: center; padding: 40px; color: var(--error);">
+                ❌ Error al cargar favoritos. 
+                <button class="btn-outline" onclick="renderFavorites()" style="margin-top: 10px;">Reintentar</button>
+            </div>`;
     }
 }
 
