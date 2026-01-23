@@ -29,7 +29,7 @@ const defaultProfiles = [
 ];
 
 // Screen Navigation
-function navigateTo(screenId) {
+async function navigateTo(screenId) {
     // Hide all screens
     document.querySelectorAll('.screen').forEach(screen => {
         screen.classList.remove('active');
@@ -74,6 +74,8 @@ function navigateTo(screenId) {
     if (screenId === 'screen-explore') renderMarketplace();
     if (screenId === 'screen-settings') loadSettingsFields();
     if (screenId === 'screen-dashboard') {
+        // Ensure profile is loaded before accessing dashboard
+        await ensureProviderProfileLoaded();
         updateDynamicMetrics();
         renderDashboardProfile();
         loadProviderDescription();
@@ -105,23 +107,54 @@ function navigateTo(screenId) {
 
 // Update UI elements based on user role
 function updateUIForRole() {
+    const isAuthenticated = AuthModule.isAuthenticated();
     const role = AuthModule.getUserRole();
-    const publishBtn = document.getElementById('nav-publish');
 
-    // Hide publish button for clients
-    if (role === 'client' && publishBtn) {
-        publishBtn.style.display = 'none';
-    } else if (publishBtn) {
-        publishBtn.style.display = '';
+    // Get UI elements
+    const publishBtn = document.getElementById('nav-publish');
+    const dashboardNavItem = document.getElementById('nav-dashboard');
+    const headerLoginBtn = document.getElementById('header-login-btn');
+
+    if (!isAuthenticated) {
+        // Hide all provider-specific features for non-authenticated users
+        if (publishBtn) publishBtn.style.display = 'none';
+        if (dashboardNavItem) dashboardNavItem.style.display = 'none';
+
+        // Show login button in header for non-authenticated users
+        if (headerLoginBtn) headerLoginBtn.style.display = '';
+        return;
+    }
+
+    // Hide login button for authenticated users
+    if (headerLoginBtn) headerLoginBtn.style.display = 'none';
+
+    // Authenticated users
+    if (role === 'client') {
+        // Hide provider-specific features for clients
+        if (publishBtn) publishBtn.style.display = 'none';
+        if (dashboardNavItem) dashboardNavItem.style.display = 'none';
+    } else if (role === 'provider') {
+        // Show provider features
+        if (publishBtn) publishBtn.style.display = '';
+        if (dashboardNavItem) dashboardNavItem.style.display = '';
     }
 }
 
 // Logout function
-function logout() {
+async function logout() {
     if (confirm('¿Estás seguro que quieres cerrar sesión?')) {
-        AuthModule.logout();
-        navigateTo('screen-explore');
+        await AuthModule.logoutUser();
+
+        // Clear favorites cache
+        favorites = [];
+        localStorage.removeItem('scorta_favorites');
+
+        // Redirect to login screen instead of explore
+        navigateTo('screen-login');
         showToast('✅ Sesión cerrada exitosamente');
+
+        // Update UI for logged-out state
+        updateUIForRole();
     }
 }
 
@@ -148,11 +181,28 @@ async function renderMarketplace() {
         if (advancedFilters.ethnicity !== 'all') filters.ethnicity = advancedFilters.ethnicity;
         if (advancedFilters.nationality !== 'all') filters.nationality = advancedFilters.nationality;
 
+        // ROLE-BASED FILTERING
+        // For providers: show clients (their potential customers)
+        // For clients: show providers (service providers)
+        const user = AuthModule.getCurrentUser();
+        const userRole = user?.role;
+
+        if (userRole === 'provider') {
+            // Providers see clients only
+            filters.role = 'client';
+        } else {
+            // Clients (or non-authenticated users) see providers
+            filters.role = 'provider';
+        }
+
         const response = await API.getProfiles(filters);
         const allProfiles = response.success ? response.data.profiles : [];
 
         if (allProfiles.length === 0) {
-            grid.innerHTML = '<div style="grid-column: span 2; text-align: center; padding: 40px; color: var(--text-secondary);">No se encontraron resultados.</div>';
+            const emptyMessage = userRole === 'provider'
+                ? 'No se encontraron clientes aún.'
+                : 'No se encontraron resultados.';
+            grid.innerHTML = `<div style="grid-column: span 2; text-align: center; padding: 40px; color: var(--text-secondary);">${emptyMessage}</div>`;
             return;
         }
 
@@ -840,7 +890,7 @@ function adNextStep(step) {
     }
 
     document.querySelectorAll('.ad-step').forEach(s => s.classList.remove('active'));
-    document.getElementById(`ad - step - ${step} `).classList.add('active');
+    document.getElementById(`ad-step-${step}`).classList.add('active');
     document.getElementById('step-indicator').textContent = `Paso ${step}/3`;
     currentAdStep = step;
 }
@@ -904,6 +954,10 @@ async function handleLogin(event) {
 
         if (result.success) {
             showToast('✅ Bienvenido a SCORTA!');
+
+            // Initialize provider profile if user is a provider
+            await initializeUserProfile();
+
             setTimeout(() => navigateTo('screen-explore'), 1000);
         } else {
             showToast('❌ ' + result.message);
@@ -1520,6 +1574,12 @@ function submitVerification() {
 // Expose new global functions
 // Map Logic
 function initMap() {
+    const mapContainer = document.getElementById('map-container');
+    if (!mapContainer) {
+        console.error('Map container not found');
+        return;
+    }
+
     if (map) {
         setTimeout(() => map.invalidateSize(), 100);
         return;
@@ -1529,10 +1589,12 @@ function initMap() {
     map = L.map('map-container', {
         zoomControl: false,
         attributionControl: false
-    }).setView([-1.8312, -78.1834], 6); // Center of Ecuador
+    }).setView([-0.1807, -78.4678], 13); // Quito center
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '© OpenStreetMap contributors'
+    // Add tile layer - OpenStreetMap
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19
     }).addTo(map);
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
@@ -2451,6 +2513,61 @@ window.navigateToPanel = navigateToPanel;
 window.loadClientProfile = loadClientProfile;
 window.saveClientProfile = saveClientProfile;
 window.handleLogout = handleLogout;
+
+// ==================================
+// PROVIDER PROFILE INITIALIZATION
+// ==================================
+
+/**
+ * Initialize user profile after login
+ * Creates profile for providers if it doesn't exist
+ */
+async function initializeUserProfile() {
+    const user = AuthModule.getCurrentUser();
+    if (!user) return;
+
+    if (user.role === 'provider') {
+        try {
+            const response = await API.getMyProfile();
+
+            if (response.success && response.data.profile) {
+                currentProviderProfile = response.data.profile;
+                console.log('Provider profile loaded:', currentProviderProfile._id);
+            } else {
+                // Profile doesn't exist, create it
+                console.log('Creating provider profile...');
+                const createResponse = await API.createProfile({
+                    role: 'provider',
+                    name: user.name || 'Prestadora',
+                    city: user.city || 'Quito',
+                    verified: false
+                });
+
+                if (createResponse.success && createResponse.data.profile) {
+                    currentProviderProfile = createResponse.data.profile;
+                    console.log('Provider profile created:', currentProviderProfile._id);
+                } else {
+                    console.error('Failed to create provider profile');
+                }
+            }
+        } catch (error) {
+            console.error('Error initializing user profile:', error);
+        }
+    }
+}
+
+/**
+ * Ensure provider profile is loaded before accessing dashboard
+ * Loads profile if not already loaded
+ */
+async function ensureProviderProfileLoaded() {
+    const user = AuthModule.getCurrentUser();
+    if (!user || user.role !== 'provider') return;
+
+    if (!currentProviderProfile) {
+        await initializeUserProfile();
+    }
+}
 
 // ==================================
 // PROVIDER DESCRIPTION EDITOR
