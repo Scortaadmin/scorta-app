@@ -1,0 +1,12 @@
+backend
+node_modules
+.git
+.env
+.env.*
+*.md
+!README.md
+.DS_Store
+*.log
+CREDENTIALS.md
+DEPLOYMENT_SECRETS.md
+railway-env.txt
