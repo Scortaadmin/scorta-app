@@ -362,6 +362,11 @@ function renderProfileGrid(allProfiles, grid) {
 function handleSearch(val) {
     searchQuery = val;
     renderMarketplace();
+
+    // Track search if query is not empty
+    if (val && val.trim() && window.Analytics) {
+        window.Analytics.trackSearch(val.trim());
+    }
 }
 
 // Carousel Navigation Function - FIX BUG #1
@@ -396,6 +401,11 @@ function filterBy(type) {
     document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
     event.target.classList.add('active');
     renderMarketplace();
+
+    // Track filter usage
+    if (window.Analytics) {
+        window.Analytics.trackEvent('Filter Applied', { filterType: type });
+    }
 }
 
 function openProfileFromData(data) {
@@ -423,21 +433,30 @@ function openProfileFromData(data) {
 // Profile Detail Logic - Fetch from API
 async function openProfile(profileId) {
     try {
+        console.log('Opening profile with ID:', profileId);
         showToast('Cargando perfil...');
         const response = await API.getProfile(profileId);
+
+        console.log('Profile API response:', response);
 
         if (response.success && response.data.profile) {
             // Increment view count in background
             API.incrementProfileView(profileId).catch(console.error);
 
+            // Track profile view
+            if (window.Analytics) {
+                window.Analytics.trackProfileView(profileId);
+            }
+
             // Open profile detail page with data
             openProfileFromData(response.data.profile);
         } else {
-            showToast('❌ Error al cargar perfil');
+            console.error('Failed to load profile. Response:', response);
+            showToast('❌ Error al cargar perfil: ' + (response.message || 'Perfil no encontrado'));
         }
     } catch (error) {
         console.error('Error loading profile:', error);
-        showToast('❌ Error al cargar perfil');
+        showToast('❌ Error al cargar perfil: ' + error.message);
     }
 }
 
@@ -467,6 +486,11 @@ async function toggleFavorite() {
             if (btn) btn.classList.add('active');
             // Add to local array
             favorites.push(currentProfileData);
+
+            // Track favorite addition
+            if (window.Analytics) {
+                window.Analytics.trackFavoriteAdd(profileId);
+            }
         }
 
         // Update favorites list if currently viewing it
@@ -912,6 +936,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (nav) nav.style.display = 'none';
     }
 
+    // Update auth UI state on page load
+    updateAuthUI();
+    updateUIForRole();
+
     // Render marketplace
     renderMarketplace();
 
@@ -1109,8 +1137,16 @@ async function handleLogin(event) {
         if (result.success) {
             showToast('✅ Bienvenido a SCORTA!');
 
+            // Track login event
+            if (window.Analytics) {
+                window.Analytics.trackLogin('email');
+            }
+
             // Initialize provider profile if user is a provider
             await initializeUserProfile();
+
+            // Update auth UI
+            updateAuthUI();
 
             setTimeout(() => navigateTo('screen-explore'), 1000);
         } else {
@@ -1147,6 +1183,15 @@ async function handleRegister(event) {
 
         if (result.success) {
             showToast('✅ Cuenta creada exitosamente!');
+
+            // Track registration event
+            if (window.Analytics) {
+                window.Analytics.trackRegistration(role);
+            }
+
+            // Update auth UI
+            updateAuthUI();
+
             setTimeout(() => navigateTo('screen-explore'), 1000);
         } else {
             showToast('❌ ' + result.message);
@@ -2662,11 +2707,47 @@ function handleLogout() {
     }
 }
 
+// Toggle user dropdown menu in header
+function toggleUserDropdown() {
+    const dropdown = document.getElementById('user-dropdown');
+    if (dropdown) {
+        const isVisible = dropdown.style.display === 'block';
+        dropdown.style.display = isVisible ? 'none' : 'block';
+    }
+}
+
+// Update auth UI in header based on login state
+function updateAuthUI() {
+    const isAuthenticated = AuthModule.isAuthenticated();
+    const user = AuthModule.getCurrentUser();
+
+    const loginBtn = document.getElementById('header-login-btn');
+    const userMenu = document.getElementById('header-user-menu');
+    const userNameDisplay = document.getElementById('user-name-display');
+    const userEmailDisplay = document.getElementById('user-email-display');
+
+    if (isAuthenticated && user) {
+        // Show user menu, hide login button
+        if (loginBtn) loginBtn.style.display = 'none';
+        if (userMenu) userMenu.style.display = 'block';
+
+        // Update user info in dropdown
+        if (userNameDisplay) userNameDisplay.textContent = user.name || user.email || 'Usuario';
+        if (userEmailDisplay) userEmailDisplay.textContent = user.email || '';
+    } else {
+        // Show login button, hide user menu
+        if (loginBtn) loginBtn.style.display = 'block';
+        if (userMenu) userMenu.style.display = 'none';
+    }
+}
+
 // Export functions to window
 window.navigateToPanel = navigateToPanel;
 window.loadClientProfile = loadClientProfile;
 window.saveClientProfile = saveClientProfile;
 window.handleLogout = handleLogout;
+window.toggleUserDropdown = toggleUserDropdown;
+window.updateAuthUI = updateAuthUI;
 
 // ==================================
 // PROVIDER PROFILE INITIALIZATION
