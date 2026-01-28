@@ -1,10 +1,15 @@
 /* ========================================
    SCORTA - Authentication Module
    Handles user authentication and session management
+   Connected to Railway backend API
 ======================================== */
 
 // Authentication State
 const AuthModule = {
+    _userCache: null,
+    _cacheExpiry: 0,
+    CACHE_DURATION: 5 * 60 * 1000, // 5 minutes
+
     // Check if user is logged in
     isAuthenticated: function () {
         return localStorage.getItem('scorta_auth_token') !== null;
@@ -12,8 +17,49 @@ const AuthModule = {
 
     // Get current user data
     getCurrentUser: function () {
+        // Return cached user if available and not expired
+        if (this._userCache && Date.now() < this._cacheExpiry) {
+            return this._userCache;
+        }
+
+        // Try to get from localStorage first
         const userStr = localStorage.getItem('scorta_current_user');
-        return userStr ? JSON.parse(userStr) : null;
+        if (userStr) {
+            try {
+                this._userCache = JSON.parse(userStr);
+                this._cacheExpiry = Date.now() + this.CACHE_DURATION;
+                return this._userCache;
+            } catch (e) {
+                console.error('Error parsing user data:', e);
+            }
+        }
+
+        return null;
+    },
+
+    // Fetch current user from API
+    fetchCurrentUser: async function () {
+        if (!this.isAuthenticated()) {
+            return null;
+        }
+
+        try {
+            const response = await window.API.getCurrentUser();
+            if (response.success && response.data) {
+                const user = response.data.user;
+                localStorage.setItem('scorta_current_user', JSON.stringify(user));
+                this._userCache = user;
+                this._cacheExpiry = Date.now() + this.CACHE_DURATION;
+                return user;
+            }
+        } catch (error) {
+            console.error('Error fetching user:', error);
+            // If token is invalid, clear auth
+            if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+                this.logoutUser();
+            }
+        }
+        return null;
     },
 
     // Get user role (client, provider, or admin)
@@ -40,84 +86,84 @@ const AuthModule = {
         return user && user.role === 'provider';
     },
 
-    // Login user
-    loginUser: function (email, password, rememberMe = false) {
-        // Get all users from storage
-        const users = JSON.parse(localStorage.getItem('scorta_users')) || [];
+    // Login user - now uses backend API
+    loginUser: async function (email, password, rememberMe = false) {
+        try {
+            const response = await window.API.login(email, password);
 
-        // Find user by email
-        const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+            if (response.success && response.data) {
+                // Store tokens
+                localStorage.setItem('scorta_auth_token', response.data.token);
+                if (response.data.refreshToken) {
+                    localStorage.setItem('scorta_refresh_token', response.data.refreshToken);
+                }
 
-        if (!user) {
-            return { success: false, message: 'Usuario no encontrado' };
+                // Store user data
+                localStorage.setItem('scorta_current_user', JSON.stringify(response.data.user));
+                this._userCache = response.data.user;
+                this._cacheExpiry = Date.now() + this.CACHE_DURATION;
+
+                if (rememberMe) {
+                    localStorage.setItem('scorta_remember_me', 'true');
+                }
+
+                return { success: true, user: response.data.user };
+            }
+
+            return { success: false, message: response.message || 'Error al iniciar sesión' };
+        } catch (error) {
+            console.error('Login error:', error);
+            return { success: false, message: error.message || 'Error de conexión' };
         }
-
-        // Verify password (in production, use proper hashing)
-        if (user.password !== password) {
-            return { success: false, message: 'Contraseña incorrecta' };
-        }
-
-        // Create session
-        const token = this._generateToken();
-        localStorage.setItem('scorta_auth_token', token);
-        localStorage.setItem('scorta_current_user', JSON.stringify(user));
-
-        if (rememberMe) {
-            localStorage.setItem('scorta_remember_me', 'true');
-        }
-
-        // Update last login
-        user.lastLogin = new Date().toISOString();
-        const userIndex = users.findIndex(u => u.email === email);
-        users[userIndex] = user;
-        localStorage.setItem('scorta_users', JSON.stringify(users));
-
-        return { success: true, user: user };
     },
 
-    // Register new user
-    registerUser: function (userData) {
-        const users = JSON.parse(localStorage.getItem('scorta_users')) || [];
+    // Register new user - now uses backend API
+    registerUser: async function (userData) {
+        try {
+            const response = await window.API.register(userData);
 
-        // Check if email already exists
-        if (users.some(u => u.email.toLowerCase() === userData.email.toLowerCase())) {
-            return { success: false, message: 'Este email ya está registrado' };
+            if (response.success && response.data) {
+                // Store tokens
+                localStorage.setItem('scorta_auth_token', response.data.token);
+                if (response.data.refreshToken) {
+                    localStorage.setItem('scorta_refresh_token', response.data.refreshToken);
+                }
+
+                // Store user data
+                localStorage.setItem('scorta_current_user', JSON.stringify(response.data.user));
+                this._userCache = response.data.user;
+                this._cacheExpiry = Date.now() + this.CACHE_DURATION;
+
+                return { success: true, user: response.data.user };
+            }
+
+            return { success: false, message: response.message || 'Error al registrar usuario' };
+        } catch (error) {
+            console.error('Registration error:', error);
+            return { success: false, message: error.message || 'Error de conexión' };
         }
-
-        // Create new user
-        const newUser = {
-            id: 'user_' + Date.now(),
-            email: userData.email,
-            password: userData.password, // In production, hash this!
-            role: userData.role || 'client',
-            name: userData.name || '',
-            phone: userData.phone || '',
-            city: userData.city || '',
-            verified: false,
-            createdAt: new Date().toISOString(),
-            lastLogin: new Date().toISOString(),
-            profileComplete: false
-        };
-
-        users.push(newUser);
-        localStorage.setItem('scorta_users', JSON.stringify(users));
-
-        // Auto-login after registration
-        const token = this._generateToken();
-        localStorage.setItem('scorta_auth_token', token);
-        localStorage.setItem('scorta_current_user', JSON.stringify(newUser));
-
-        return { success: true, user: newUser };
     },
 
-    // Logout user
-    logoutUser: function () {
-        localStorage.removeItem('scorta_auth_token');
-        localStorage.removeItem('scorta_current_user');
+    // Logout user - now calls backend API
+    logoutUser: async function () {
+        try {
+            if (this.isAuthenticated() && window.API) {
+                await window.API.logout();
+            }
+        } catch (error) {
+            console.error('Logout error:', error);
+        } finally {
+            // Clear local storage regardless of API call result
+            localStorage.removeItem('scorta_auth_token');
+            localStorage.removeItem('scorta_refresh_token');
+            localStorage.removeItem('scorta_current_user');
+            this._userCache = null;
+            this._cacheExpiry = 0;
 
-        // Clear remember me if not set
-        if (!localStorage.getItem('scorta_remember_me')) {
-            localStorage.removeItem('scorta_last_email');
+            // Clear remember me if not set
+            if (!localStorage.getItem('scorta_remember_me')) {
+                localStorage.removeItem('scorta_last_email');
+            }
         }
     },
 
@@ -126,19 +172,13 @@ const AuthModule = {
         const user = this.getCurrentUser();
         if (!user) return { success: false, message: 'No hay sesión activa' };
 
-        const users = JSON.parse(localStorage.getItem('scorta_users')) || [];
-        const userIndex = users.findIndex(u => u.id === user.id);
+        // Update cached user
+        const updatedUser = { ...user, ...updates };
+        localStorage.setItem('scorta_current_user', JSON.stringify(updatedUser));
+        this._userCache = updatedUser;
+        this._cacheExpiry = Date.now() + this.CACHE_DURATION;
 
-        if (userIndex === -1) {
-            return { success: false, message: 'Usuario no encontrado' };
-        }
-
-        // Update user data
-        users[userIndex] = { ...users[userIndex], ...updates };
-        localStorage.setItem('scorta_users', JSON.stringify(users));
-        localStorage.setItem('scorta_current_user', JSON.stringify(users[userIndex]));
-
-        return { success: true, user: users[userIndex] };
+        return { success: true, user: updatedUser };
     },
 
     // Check if profile is complete
@@ -158,104 +198,14 @@ const AuthModule = {
         });
     },
 
-    // Request password reset (simulation)
-    requestPasswordReset: function (email) {
-        const users = JSON.parse(localStorage.getItem('scorta_users')) || [];
-        const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-
-        if (!user) {
-            return { success: false, message: 'Email no registrado' };
-        }
-
-        // In production, send actual reset email
-        // For now, just generate a reset token
-        const resetToken = this._generateToken();
-        localStorage.setItem('scorta_reset_token_' + email, resetToken);
-
-        return {
-            success: true,
-            message: 'Se ha enviado un enlace de recuperación a tu email',
-            token: resetToken // Only for demo purposes
-        };
-    },
-
-    // Reset password
-    resetPassword: function (email, token, newPassword) {
-        const savedToken = localStorage.getItem('scorta_reset_token_' + email);
-
-        if (!savedToken || savedToken !== token) {
-            return { success: false, message: 'Token inválido o expirado' };
-        }
-
-        const users = JSON.parse(localStorage.getItem('scorta_users')) || [];
-        const userIndex = users.findIndex(u => u.email.toLowerCase() === email.toLowerCase());
-
-        if (userIndex === -1) {
-            return { success: false, message: 'Usuario no encontrado' };
-        }
-
-        users[userIndex].password = newPassword;
-        localStorage.setItem('scorta_users', JSON.stringify(users));
-        localStorage.removeItem('scorta_reset_token_' + email);
-
-        return { success: true, message: 'Contraseña actualizada correctamente' };
-    },
-
-    // Generate random token
-    _generateToken: function () {
-        return 'token_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-    },
-
-    // Initialize with demo accounts
-    initializeDemoAccounts: function () {
-        const users = JSON.parse(localStorage.getItem('scorta_users')) || [];
-
-        if (users.length === 0) {
-            const demoUsers = [
-                {
-                    id: 'demo_client',
-                    email: 'cliente@demo.com',
-                    password: 'demo123',
-                    role: 'client',
-                    name: 'Carlos Mendoza',
-                    phone: '+593 99 123 4567',
-                    city: 'Quito',
-                    verified: true,
-                    createdAt: new Date().toISOString(),
-                    profileComplete: true
-                },
-                {
-                    id: 'demo_provider',
-                    email: 'proveedor@demo.com',
-                    password: 'demo123',
-                    role: 'provider',
-                    name: 'Valeria',
-                    phone: '+593 99 765 4321',
-                    city: 'Quito',
-                    verified: true,
-                    createdAt: new Date().toISOString(),
-                    profileComplete: true
-                },
-                {
-                    id: 'demo_admin',
-                    email: 'admin@scorta.com',
-                    password: 'admin123',
-                    role: 'admin',
-                    name: 'Administrador SCORTA',
-                    phone: '+593 99 000 0000',
-                    city: 'Quito',
-                    verified: true,
-                    createdAt: new Date().toISOString(),
-                    profileComplete: true
-                }
-            ];
-
-            localStorage.setItem('scorta_users', JSON.stringify(demoUsers));
-        }
+    // Clear user cache (useful after updates)
+    clearCache: function () {
+        this._userCache = null;
+        this._cacheExpiry = 0;
     }
 };
 
-// Initialize demo accounts on load
+// Make AuthModule available globally
 if (typeof window !== 'undefined') {
-    AuthModule.initializeDemoAccounts();
+    window.AuthModule = AuthModule;
 }

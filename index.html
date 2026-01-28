@@ -5,6 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SCORTA | Conexiones Seguras</title>
+
+    <!-- Plausible Analytics -->
+    <script defer data-domain="scorta-app.vercel.app" src="https://plausible.io/js/script.js"></script>
+
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
@@ -499,11 +503,38 @@
                             <input type="text" id="main-search" placeholder="Buscar..."
                                 oninput="handleSearch(this.value)">
                         </div>
-                        <button class="icon-btn" id="header-login-btn" onclick="navigateTo('screen-login')"
-                            style="display: none;">
+                        <!-- Auth buttons (shown when logged out) -->
+                        <button class="icon-btn" id="header-login-btn"
+                            onclick="window.location.href='login-register.html'" title="Iniciar Sesión">
                             <i class="fas fa-sign-in-alt"></i>
                         </button>
-                        <button class="icon-btn" onclick="navigateTo('screen-safety')"><i
+                        <!-- User menu (shown when logged in) -->
+                        <div class="user-menu" id="header-user-menu" style="display: none;">
+                            <button class="icon-btn" onclick="toggleUserDropdown()" id="user-avatar-btn">
+                                <i class="fas fa-user-circle"></i>
+                            </button>
+                            <div class="user-dropdown glass-card" id="user-dropdown" style="display: none;">
+                                <div class="user-info">
+                                    <span id="user-name-display">Usuario</span>
+                                    <span id="user-email-display" style="font-size: 0.8rem; opacity: 0.7;"></span>
+                                </div>
+                                <div class="dropdown-divider"></div>
+                                <button onclick="navigateTo('screen-dashboard')" class="dropdown-item">
+                                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                                </button>
+                                <button onclick="navigateTo('screen-favorites')" class="dropdown-item">
+                                    <i class="fas fa-heart"></i> Favoritos
+                                </button>
+                                <button onclick="navigateTo('screen-messages')" class="dropdown-item">
+                                    <i class="fas fa-comments"></i> Mensajes
+                                </button>
+                                <div class="dropdown-divider"></div>
+                                <button onclick="handleLogout()" class="dropdown-item text-danger">
+                                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                                </button>
+                            </div>
+                        </div>
+                        <button class="icon-btn" onclick="navigateTo('screen-safety')" title="Seguridad"><i
                                 class="fas fa-shield-alt"></i></button>
                     </div>
                 </div>
@@ -1852,7 +1883,8 @@
     <script src="utils.js"></script>
     <script src="config.js"></script>
     <script src="api-service.js"></script>
-    <script src="auth-backend.js"></script>
+    <script src="analytics.js"></script>
+    <script src="auth.js"></script>
     <script src="payments.js"></script>
     <script src="admin.js"></script>
     <script src="app.js"></script>
