@@ -451,12 +451,31 @@ async function openProfile(profileId) {
             // Open profile detail page with data
             openProfileFromData(response.data.profile);
         } else {
-            console.error('Failed to load profile. Response:', response);
-            showToast('❌ Error al cargar perfil: ' + (response.message || 'Perfil no encontrado'));
+            // Try to find in default profiles (demo profiles)
+            const demoProfile = defaultProfiles.find(p => p.id === profileId || p._id === profileId);
+
+            if (demoProfile) {
+                console.log('Profile not found in API, using demo profile:', demoProfile);
+                showToast('📋 Mostrando perfil de demostración');
+                openProfileFromData(demoProfile);
+            } else {
+                console.error('Failed to load profile. Response:', response);
+                showToast('❌ Error al cargar perfil: ' + (response.message || 'Perfil no encontrado'));
+            }
         }
     } catch (error) {
         console.error('Error loading profile:', error);
-        showToast('❌ Error al cargar perfil: ' + error.message);
+
+        // Try to find in default profiles as fallback
+        const demoProfile = defaultProfiles.find(p => p.id === profileId || p._id === profileId);
+
+        if (demoProfile) {
+            console.log('API error, using demo profile as fallback:', demoProfile);
+            showToast('📋 Mostrando perfil de demostración');
+            openProfileFromData(demoProfile);
+        } else {
+            showToast('❌ Error al cargar perfil: ' + error.message);
+        }
     }
 }
 
