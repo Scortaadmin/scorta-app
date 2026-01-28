@@ -28,8 +28,49 @@ const defaultProfiles = [
     { id: 'gabriela', name: 'Gabriela', age: 27, city: 'Machala', verified: false, elite: false, price: 55, ethnicity: 'Latina', nationality: 'Ecuatoriana', lat: -3.2581, lng: -79.9553, img: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=400&q=80' }
 ];
 
+// Age Verification Functions - BUG #5 FIX
+function checkAgeVerification() {
+    return localStorage.getItem('scorta_age_verified') === 'true';
+}
+
+function confirmAge() {
+    localStorage.setItem('scorta_age_verified', 'true');
+    localStorage.setItem('scorta_age_verified_date', new Date().toISOString());
+    showToast('✅ Bienvenido a SCORTA');
+    navigateTo('screen-explore');
+}
+
+function denyAge() {
+    showToast('⚠️ Debes ser mayor de 18 años para acceder');
+    setTimeout(() => {
+        window.location.href = 'https://www.google.com';
+    }, 2000);
+}
+
+// Expose for HTML onclick handlers
+window.confirmAge = confirmAge;
+window.denyAge = denyAge;
+
 // Screen Navigation
 async function navigateTo(screenId) {
+    // BUG #5 FIX: Check age verification for certain screens if not authenticated
+    const protectedScreensForAnonymous = ['screen-favorites', 'screen-messages', 'screen-dashboard', 'screen-plans', 'screen-checkout', 'screen-settings'];
+    const isAuthenticated = AuthModule.isAuthenticated();
+    const isAgeVerified = checkAgeVerification();
+
+    // If user is not authenticated and trying to access protected screens, show login
+    if (!isAuthenticated && protectedScreensForAnonymous.includes(screenId)) {
+        showToast('❌ Debes iniciar sesión para acceder a esta función');
+        navigateTo('screen-login');
+        return;
+    }
+
+    // If not age verified and trying to access explore, show age gate
+    if (!isAgeVerified && screenId === 'screen-explore') {
+        navigateTo('screen-gate');
+        return;
+    }
+
     // Hide all screens
     document.querySelectorAll('.screen').forEach(screen => {
         screen.classList.remove('active');
@@ -183,6 +224,43 @@ async function renderMarketplace() {
     grid.innerHTML = '<div style="grid-column: span 2; text-align: center; padding: 40px;"><i class="fas fa-spinner fa-spin"></i> Cargando perfiles...</div>';
 
     try {
+        // BUG #5 FIX: Allow anonymous browsing - use default profiles if not authenticated
+        const isAuthenticated = AuthModule.isAuthenticated();
+
+        if (!isAuthenticated) {
+            // Use default profiles for anonymous users
+            const allProfiles = defaultProfiles;
+
+            // Apply local filtering for anonymous users
+            let filtered = allProfiles;
+            if (activeFilter === 'verified') {
+                filtered = filtered.filter(p => p.verified);
+            }
+            if (searchQuery && searchQuery.trim() !== '') {
+                const query = searchQuery.toLowerCase();
+                filtered = filtered.filter(p =>
+                    p.name.toLowerCase().includes(query) ||
+                    p.city.toLowerCase().includes(query)
+                );
+            }
+            if (advancedFilters.city !== 'all') {
+                filtered = filtered.filter(p => p.city === advancedFilters.city);
+            }
+            if (advancedFilters.ethnicity !== 'all') {
+                filtered = filtered.filter(p => p.ethnicity === advancedFilters.ethnicity);
+            }
+            if (advancedFilters.nationality !== 'all') {
+                filtered = filtered.filter(p => p.nationality === advancedFilters.nationality);
+            }
+            if (advancedFilters.price !== 300) {
+                filtered = filtered.filter(p => p.price <= advancedFilters.price);
+            }
+
+            renderProfileGrid(filtered, grid);
+            return; // Exit early for anonymous users
+        }
+
+        // FOR AUTHENTICATED USERS: Use API
         // Build filter object for API
         const filters = {};
         if (searchQuery && searchQuery.trim() !== '') filters.search = searchQuery.trim();
@@ -205,9 +283,9 @@ async function renderMarketplace() {
 
             // Bug #7: "Verificados" filter shows only VERIFIED clients with contact
             // Bug #8: "Todos" filter shows ALL clients with contact (verified or not)
-            // The activeFilter 'verified' is already handled above at line 189
+            // The activeFilter 'verified' is already handled above
         } else {
-            // Clients (or non-authenticated users) see providers
+            // Clients see providers
             filters.role = 'provider';
         }
 
@@ -222,57 +300,62 @@ async function renderMarketplace() {
             return;
         }
 
-        grid.innerHTML = allProfiles.map((p, profileIndex) => {
-            const photos = p.photos && p.photos.length > 0
-                ? p.photos
-                : [p.avatar || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=400'];
-
-            return `
-            <div class="profile-card" data-profile-id="${p._id}" onclick="openProfile('${p._id}')">
-                <div class="profile-carousel-container">
-                    ${photos.map((photo, idx) => `
-                        <div class="profile-img carousel-slide ${idx === 0 ? 'active' : ''}" 
-                             style="background-image: url('${photo}')"
-                             data-slide="${idx}">
-                        </div>
-                    `).join('')}
-                    
-                    ${photos.length > 1 ? `
-                        <div class="carousel-dots">
-                            ${photos.map((_, idx) => `
-                                <span class="dot ${idx === 0 ? 'active' : ''}" data-dot="${idx}"></span>
-                            `).join('')}
-                        </div>
-                        <button class="carousel-nav prev" onclick="event.stopPropagation(); navigateCarouselByCard(this, -1)">
-                            <i class="fas fa-chevron-left"></i>
-                        </button>
-                        <button class="carousel-nav next" onclick="event.stopPropagation(); navigateCarouselByCard(this, 1)">
-                            <i class="fas fa-chevron-right"></i>
-                        </button>
-                    ` : ''}
-                    
-                    <div class="badge-row">
-                        ${p.verified ? '<span class="badge verified"><i class="fas fa-certificate"></i> Verificada</span>' : ''}
-                        ${p.isPremium ? '<span class="badge top-ad"><i class="fas fa-crown"></i> Elite</span>' : ''}
-                    </div>
-                    <div class="profile-info-overlay" onclick="openProfile('${p._id}')">
-                        <h3>${p.name || 'Usuario'}, ${p.age || '25'} <span class="status-dot"></span></h3>
-                        <p><i class="fas fa-map-marker-alt"></i> ${p.city || 'Ecuador'}${p.pricing && p.pricing.hourly ? ' · $' + p.pricing.hourly : ''}</p>
-                    </div>
-                </div>
-            </div>
-        `;
-        }).join('') + `
-            <div id="pwa-install-tile" class="profile-card glass-card pwa-banner-card" onclick="triggerPWAInstall()" style="display: none; background: linear-gradient(135deg, var(--surface) 0%, var(--bg-dark) 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px;">
-                <i class="fas fa-mobile-alt" style="font-size: 2.5rem; color: var(--accent); margin-bottom: 15px;"></i>
-                <h4 style="margin-bottom: 5px;">Instalar App</h4>
-                <p style="font-size: 0.75rem; color: var(--text-secondary);">Acceso rápido y seguro desde tu pantalla de inicio.</p>
-            </div>
-        `;
+        renderProfileGrid(allProfiles, grid);
     } catch (error) {
         console.error('Error loading profiles:', error);
         grid.innerHTML = '<div style="grid-column: span 2; text-align: center; padding: 40px; color: var(--error);">Error al cargar perfiles. <button class="btn-outline" onclick="renderMarketplace()" style="margin-top: 10px;">Reintentar</button></div>';
     }
+}
+
+// Helper function to render profile grid - BUG #5 FIX
+function renderProfileGrid(allProfiles, grid) {
+    grid.innerHTML = allProfiles.map((p, profileIndex) => {
+        const photos = p.photos && p.photos.length > 0
+            ? p.photos
+            : [p.avatar || p.img || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=400'];
+
+        return `
+        <div class="profile-card" data-profile-id="${p._id || p.id}" onclick="openProfile('${p._id || p.id}')">
+            <div class="profile-carousel-container">
+                ${photos.map((photo, idx) => `
+                    <div class="profile-img carousel-slide ${idx === 0 ? 'active' : ''}" 
+                         style="background-image: url('${photo}')"
+                         data-slide="${idx}">
+                    </div>
+                `).join('')}
+                
+                ${photos.length > 1 ? `
+                    <div class="carousel-dots">
+                        ${photos.map((_, idx) => `
+                            <span class="dot ${idx === 0 ? 'active' : ''}" data-dot="${idx}"></span>
+                        `).join('')}
+                    </div>
+                    <button class="carousel-nav prev" onclick="event.stopPropagation(); navigateCarouselByCard(this, -1)">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <button class="carousel-nav next" onclick="event.stopPropagation(); navigateCarouselByCard(this, 1)">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                ` : ''}
+                
+                <div class="badge-row">
+                    ${p.verified ? '<span class="badge verified"><i class="fas fa-certificate"></i> Verificada</span>' : ''}
+                    ${p.isPremium || p.elite ? '<span class="badge top-ad"><i class="fas fa-crown"></i> Elite</span>' : ''}
+                </div>
+                <div class="profile-info-overlay" onclick="openProfile('${p._id || p.id}')">
+                    <h3>${p.name || 'Usuario'}, ${p.age || '25'} <span class="status-dot"></span></h3>
+                    <p><i class="fas fa-map-marker-alt"></i> ${p.city || 'Ecuador'}${p.pricing && p.pricing.hourly ? ' · $' + p.pricing.hourly : (p.price ? ' · $' + p.price : '')}</p>
+                </div>
+            </div>
+        </div>
+    `;
+    }).join('') + `
+        <div id="pwa-install-tile" class="profile-card glass-card pwa-banner-card" onclick="triggerPWAInstall()" style="display: none; background: linear-gradient(135deg, var(--surface) 0%, var(--bg-dark) 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px;">
+            <i class="fas fa-mobile-alt" style="font-size: 2.5rem; color: var(--accent); margin-bottom: 15px;"></i>
+            <h4 style="margin-bottom: 5px;">Instalar App</h4>
+            <p style="font-size: 0.75rem; color: var(--text-secondary);">Acceso rápido y seguro desde tu pantalla de inicio.</p>
+        </div>
+    `;
 }
 
 
@@ -816,13 +899,21 @@ function showToast(message) {
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
-    renderMarketplace();
-    // Initial State Check
+    // BUG #5 FIX: Check age verification on load and skip gate if verified
+    const isAgeVerified = checkAgeVerification();
     const gate = document.getElementById('screen-gate');
     const nav = document.querySelector('.bottom-nav');
-    if (gate && gate.classList.contains('active')) {
+
+    if (isAgeVerified && gate && gate.classList.contains('active')) {
+        // User already verified age, go directly to explore
+        navigateTo('screen-explore');
+    } else if (gate && gate.classList.contains('active')) {
+        // Age gate is active, hide bottom nav
         if (nav) nav.style.display = 'none';
     }
+
+    // Render marketplace
+    renderMarketplace();
 
     // Dashboard Interactivity
     const visibilityToggle = document.getElementById('visibility-toggle');
