@@ -5,8 +5,8 @@
 
 // Core States
 let currentProfileData = null;
-let favorites = JSON.parse(localStorage.getItem('scorta_favorites')) || [];
-let customAds = JSON.parse(localStorage.getItem('scorta_custom_ads')) || [];
+let favorites = []; // Managed by backend API
+let customAds = []; // Managed by backend API
 let selectedRating = 0;
 let currentAdStep = 1;
 let currentAdPhoto = null;
@@ -197,9 +197,7 @@ async function logout() {
         // Clear all cached data
         favorites = [];
         currentProfileData = null;
-        localStorage.removeItem('scorta_favorites');
-        localStorage.removeItem('scorta_custom_ads');
-        localStorage.removeItem('scorta_boost_active');
+        // Note: localStorage cleared by AuthModule.logoutUser()
 
         // Redirect to age gate screen
         navigateTo('screen-gate');

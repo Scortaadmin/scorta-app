@@ -9,22 +9,22 @@ class APIService {
         this.baseURL = (typeof SCORTA_CONFIG !== 'undefined' && SCORTA_CONFIG.API_BASE_URL)
             ? SCORTA_CONFIG.API_BASE_URL
             : 'http://localhost:3001/api';
-        this.token = localStorage.getItem('scorta_token');
+        this.token = localStorage.getItem('scorta_auth_token');
     }
 
     // Set authorization token
     setToken(token) {
         this.token = token;
         if (token) {
-            localStorage.setItem('scorta_token', token);
+            localStorage.setItem('scorta_auth_token', token);
         } else {
-            localStorage.removeItem('scorta_token');
+            localStorage.removeItem('scorta_auth_token');
         }
     }
 
     // Get authorization token
     getToken() {
-        return this.token || localStorage.getItem('scorta_token');
+        return this.token || localStorage.getItem('scorta_auth_token');
     }
 
     // Generic request method
